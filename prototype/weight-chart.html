@@ -100,8 +100,7 @@
 
   <!-- 탭 -->
   <div class="tab-bar">
-    <button class="tab active" data-mode="monthly-view">월별보기</button>
-    <button class="tab" data-mode="all">전체보기</button>
+    <button class="tab active" data-mode="all">전체보기</button>
     <button class="tab" data-mode="weekly">주간평균</button>
     <button class="tab" data-mode="monthly">월간평균</button>
   </div>
@@ -348,7 +347,7 @@ const RAW_DATA = [
    앱 상태
 ──────────────────────────────────── */
 let allData  = [...RAW_DATA].sort((a,b) => a.date.localeCompare(b.date));
-let mode     = 'monthly-view'; // 현재 탭
+let mode     = 'all';          // 현재 탭
 let showLabels = true;        // 꼭지점 숫자 on/off
 let chart, lineSeries, markerSeries;
 
@@ -412,12 +411,6 @@ function initChart() {
    데이터 집계 & 차트 업데이트
 ──────────────────────────────────── */
 function getChartData() {
-  if (mode === 'monthly-view') {
-    const latest = allData[allData.length - 1].date;
-    const ym = latest.slice(0, 7); // "YYYY-MM"
-    const filtered = allData.filter(d => d.date.startsWith(ym));
-    return filtered.map(d => ({ time: d.date, value: d.w, label: d.w.toFixed(1) }));
-  }
   if (mode === 'all') {
     return allData.map(d => ({ time: d.date, value: d.w, label: d.w.toFixed(1) }));
   }
@@ -493,7 +486,7 @@ function updateChart() {
 ──────────────────────────────────── */
 function renderList(pts) {
   const rev = [...pts].reverse();
-  const titles = { 'monthly-view':'월별 기록', weekly:'주간 평균', monthly:'월간 평균', all:'전체 기록' };
+  const titles = { all:'전체 기록', weekly:'주간 평균', monthly:'월간 평균' };
   document.getElementById('list-title').textContent = titles[mode];
 
   const el = document.getElementById('data-list');
