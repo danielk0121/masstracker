@@ -125,7 +125,7 @@
   <!-- 차트 -->
   <div class="chart-wrap">
     <div class="chart-toolbar">
-      <button class="toolbar-btn active" id="btn-label" onclick="toggleLabels()">
+      <button class="toolbar-btn" id="btn-label" onclick="toggleLabels()">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="4"/><line x1="8" y1="12" x2="8" y2="15"/><line x1="1" y1="8" x2="4" y2="8"/><line x1="12" y1="8" x2="15" y2="8"/></svg>
         꼭지점
       </button>
@@ -333,7 +333,7 @@ const RAW_DATA = [
 ──────────────────────────────────── */
 let allData  = [...RAW_DATA].sort((a,b) => a.date.localeCompare(b.date));
 let mode     = 'all';          // 현재 탭
-let showLabels = true;        // 꼭지점 숫자 on/off
+let showLabels = false;       // 꼭지점 숫자 on/off
 let chart, lineSeries, markerSeries;
 
 /* ────────────────────────────────────
@@ -483,8 +483,8 @@ function updateChart() {
 ──────────────────────────────────── */
 function renderList(pts) {
   const rev = [...pts].reverse();
-  const titles = { all:'전체 기록', weekly:'주간 평균', monthly:'월간 평균' };
-  document.getElementById('list-title').textContent = titles[mode];
+  const titles = { all:'전체 기록', weekly:'주간 평균 <span style="font-weight:400;color:var(--text3)">(월요일 기준)</span>', monthly:'월간 평균' };
+  document.getElementById('list-title').innerHTML = titles[mode];
 
   const el = document.getElementById('data-list');
   el.innerHTML = rev.map((p, i) => {
@@ -499,7 +499,7 @@ function renderList(pts) {
     const dateLabel = mode === 'monthly'
       ? p.time.slice(0,7).replace('-','년 ')+'월'
       : mode === 'weekly'
-        ? `${fmtFull(p.time)} 주`
+        ? `${fmtFull(p.time).replace(/ \(월\)/, '')} 주`
         : fmtFull(p.time);
     return `<div class="list-item">
       <span class="list-date">${dateLabel}</span>
