@@ -257,7 +257,7 @@ function initChart() {
   });
 
   /* 선 시리즈 */
-  lineSeries = chart.addLineSeries({
+  lineSeries = chart.addSeries(LightweightCharts.LineSeries, {
     color: '#00e5a0',
     lineWidth: 2,
     crosshairMarkerVisible: true,
