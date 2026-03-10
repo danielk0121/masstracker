@@ -1,2 +1,74 @@
 /.claude/
+
+# ========================
+# macOS
+# ========================
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# ========================
+# IDE — JetBrains / Android Studio
+# ========================
 /.idea/
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# ========================
+# Android
+# ========================
+build/
+**/build/
+local.properties
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.hprof
+captures/
+.externalNativeBuild/
+.cxx/
+app/release/
+keystore.jks
+*.keystore
+*.jks
+google-services.json
+# Gradle
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# ========================
+# Frontend / Web
+# ========================
+node_modules/
+dist/
+.cache/
+.parcel-cache/
+.vite/
+.nuxt/
+.next/
+out/
+.output/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+.env
+.env.local
+.env.*.local
+
+# ========================
+# Misc
+# ========================
+*.tmp
+*.bak
+*.swp
+*~
