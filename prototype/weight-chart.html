@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>체중 트래커</title>
+<script src="https://unpkg.com/lightweight-charts@5.0.0/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+  /* ── 전역 변수 & 리셋 ── */
+  :root {
+    --bg:        #0d0d0f;
+    --surface:   #16161a;
+    --surface2:  #1e1e24;
+    --border:    #2a2a35;
+    --accent:    #00e5a0;
+    --accent2:   #00b87a;
+    --danger:    #ff4d6d;
+    --text:      #e8e8f0;
+    --text2:     #8888aa;
+    --text3:     #55556a;
+    --chart-h:   340px;
+    --radius:    12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; overflow-x: hidden; }
+
+  /* ── 레이아웃 ── */
+  .app { display: flex; flex-direction: column; height: 100dvh; max-width: 480px; margin: 0 auto; }
+  header { padding: 16px 20px 8px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: var(--bg); position: sticky; top: 0; z-index: 10; }
+  header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-right { display: flex; gap: 8px; align-items: center; }
+
+  /* ── 탭 (7일/주간/월간/전체) ── */
+  .tab-bar { display: flex; gap: 4px; padding: 12px 16px 0; background: var(--bg); }
+  .tab { flex: 1; padding: 7px 0; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text2); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; }
+  .tab.active { background: var(--accent); border-color: var(--accent); color: #000; }
+
+  /* ── 요약 카드 ── */
+  .summary { padding: 14px 16px 0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+  .stat-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+  .stat-value { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+  .stat-value.up   { color: var(--danger); }
+  .stat-value.down { color: var(--accent); }
+  .stat-value.avg  { color: var(--text); }
+  .stat-unit { font-size: 11px; color: var(--text2); margin-left: 2px; font-weight: 400; }
+
+  /* ── 차트 영역 ── */
+  .chart-wrap { flex: 1; padding: 12px 16px 0; position: relative; min-height: var(--chart-h); }
+  #chart { width: 100%; height: var(--chart-h); border-radius: var(--radius); overflow: hidden; background: var(--surface); border: 1px solid var(--border); }
+
+  /* ── 차트 툴바 ── */
+  .chart-toolbar { display: flex; justify-content: flex-end; align-items: center; gap: 6px; padding: 8px 0 4px; }
+  .toolbar-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text2); font-size: 11px; padding: 5px 10px; cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 4px; }
+  .toolbar-btn:hover, .toolbar-btn.active { background: var(--border); color: var(--text); }
+  .toolbar-btn svg { width: 13px; height: 13px; }
+
+  /* ── 데이터 리스트 ── */
+  .list-section { padding: 0 16px; flex: 1; overflow-y: auto; padding-bottom: 20px; }
+  .list-header { font-size: 12px; color: var(--text3); padding: 14px 0 8px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+  .list-item { display: flex; align-items: center; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 6px; }
+  .list-date { flex: 1; font-size: 13px; color: var(--text2); }
+  .list-weight { font-size: 17px; font-weight: 700; margin-right: 8px; }
+  .list-diff { font-size: 12px; padding: 2px 7px; border-radius: 5px; font-weight: 600; }
+  .diff-up   { color: var(--danger); background: rgba(255,77,109,.1); }
+  .diff-down { color: var(--accent); background: rgba(0,229,160,.1); }
+  .diff-same { color: var(--text3); background: var(--surface2); }
+
+  /* ── 입력 FAB ── */
+  .fab { position: fixed; bottom: 24px; right: calc(50% - 240px + 20px); width: 52px; height: 52px; border-radius: 50%; background: var(--accent); color: #000; font-size: 26px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0,229,160,.35); transition: transform .15s; z-index: 20; }
+  .fab:active { transform: scale(.93); }
+
+  /* ── 입력 모달 ── */
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 30; display: none; align-items: flex-end; justify-content: center; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--surface); border-radius: 20px 20px 0 0; padding: 24px 20px 40px; width: 100%; max-width: 480px; border-top: 1px solid var(--border); }
+  .modal h2 { font-size: 16px; font-weight: 700; margin-bottom: 20px; }
+  .modal label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 6px; }
+  .modal input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; color: var(--text); font-size: 16px; outline: none; margin-bottom: 16px; }
+  .modal input:focus { border-color: var(--accent); }
+  .modal-btns { display: flex; gap: 8px; }
+  .btn-cancel { flex: 1; padding: 14px; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border); color: var(--text2); font-size: 15px; cursor: pointer; }
+  .btn-save   { flex: 2; padding: 14px; border-radius: 10px; background: var(--accent); border: none; color: #000; font-size: 15px; font-weight: 700; cursor: pointer; }
+
+  /* ── 스크롤바 ── */
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 헤더 -->
+  <header>
+    <h1>⚖️ 체중 트래커</h1>
+    <div class="header-right">
+      <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
+    </div>
+  </header>
+
+  <!-- 탭 -->
+  <div class="tab-bar">
+    <button class="tab active" data-mode="7d">7일</button>
+    <button class="tab" data-mode="weekly">주간평균</button>
+    <button class="tab" data-mode="monthly">월간평균</button>
+    <button class="tab" data-mode="all">전체</button>
+  </div>
+
+  <!-- 요약 -->
+  <div class="summary">
+    <div class="stat">
+      <div class="stat-label">평균</div>
+      <div class="stat-value avg" id="s-avg">–</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">최저</div>
+      <div class="stat-value down" id="s-min">–</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">최고</div>
+      <div class="stat-value up" id="s-max">–</div>
+    </div>
+  </div>
+
+  <!-- 차트 -->
+  <div class="chart-wrap">
+    <div class="chart-toolbar">
+      <button class="toolbar-btn active" id="btn-label" onclick="toggleLabels()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="4"/><line x1="8" y1="12" x2="8" y2="15"/><line x1="1" y1="8" x2="4" y2="8"/><line x1="12" y1="8" x2="15" y2="8"/></svg>
+        꼭지점
+      </button>
+      <button class="toolbar-btn" onclick="resetZoom()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg>
+        초기화
+      </button>
+    </div>
+    <div id="chart"></div>
+  </div>
+
+  <!-- 데이터 목록 -->
+  <div class="list-section">
+    <div class="list-header" id="list-title">최근 기록</div>
+    <div id="data-list"></div>
+  </div>
+
+</div>
+
+<!-- FAB (체중 추가) -->
+<button class="fab" onclick="openModal()">＋</button>
+
+<!-- 입력 모달 -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h2>체중 입력</h2>
+    <label>날짜</label>
+    <input type="date" id="inp-date">
+    <label>체중 (kg)</label>
+    <input type="number" id="inp-weight" step="0.1" min="30" max="200" placeholder="예) 75.5">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-save"   onclick="saveEntry()">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════
+   더미 데이터 (삼성헬스 연동 전 사용)
+   날짜: yyyy-MM-dd, 체중: kg
+════════════════════════════════════ */
+const RAW_DATA = [
+  // 2025년 10월
+  {date:'2025-10-01',w:78.2},{date:'2025-10-03',w:77.9},{date:'2025-10-05',w:78.4},
+  {date:'2025-10-07',w:77.6},{date:'2025-10-09',w:77.1},{date:'2025-10-11',w:77.5},
+  {date:'2025-10-13',w:77.8},{date:'2025-10-15',w:76.9},{date:'2025-10-17',w:76.5},
+  {date:'2025-10-19',w:76.8},{date:'2025-10-21',w:77.0},{date:'2025-10-23',w:76.3},
+  {date:'2025-10-25',w:76.6},{date:'2025-10-27',w:76.1},{date:'2025-10-29',w:75.9},
+  {date:'2025-10-31',w:76.2},
+  // 2025년 11월
+  {date:'2025-11-02',w:75.8},{date:'2025-11-04',w:76.1},{date:'2025-11-06',w:75.5},
+  {date:'2025-11-08',w:75.9},{date:'2025-11-10',w:76.3},{date:'2025-11-12',w:75.7},
+  {date:'2025-11-14',w:75.2},{date:'2025-11-16',w:75.6},{date:'2025-11-18',w:75.0},
+  {date:'2025-11-20',w:75.4},{date:'2025-11-22',w:74.9},{date:'2025-11-24',w:75.3},
+  {date:'2025-11-26',w:74.7},{date:'2025-11-28',w:75.1},{date:'2025-11-30',w:74.8},
+  // 2025년 12월
+  {date:'2025-12-02',w:75.0},{date:'2025-12-04',w:75.5},{date:'2025-12-06',w:75.2},
+  {date:'2025-12-08',w:75.7},{date:'2025-12-10',w:76.0},{date:'2025-12-12',w:75.4},
+  {date:'2025-12-14',w:75.8},{date:'2025-12-16',w:76.2},{date:'2025-12-18',w:75.6},
+  {date:'2025-12-20',w:76.1},{date:'2025-12-22',w:75.9},{date:'2025-12-24',w:76.4},
+  {date:'2025-12-26',w:76.8},{date:'2025-12-28',w:76.3},{date:'2025-12-30',w:76.0},
+  // 2026년 1월
+  {date:'2026-01-01',w:76.5},{date:'2026-01-03',w:76.2},{date:'2026-01-05',w:75.9},
+  {date:'2026-01-07',w:76.3},{date:'2026-01-09',w:75.7},{date:'2026-01-11',w:75.5},
+  {date:'2026-01-13',w:76.0},{date:'2026-01-15',w:75.4},{date:'2026-01-17',w:75.1},
+  {date:'2026-01-19',w:75.6},{date:'2026-01-21',w:75.0},{date:'2026-01-23',w:75.3},
+  {date:'2026-01-25',w:74.9},{date:'2026-01-27',w:75.2},{date:'2026-01-29',w:75.5},
+  {date:'2026-01-31',w:75.1},
+  // 2026년 2월 (매일 측정, 70~84kg 범위 — 초반 고점에서 완만히 감소 후 등락)
+  {date:'2026-02-01',w:83.6},{date:'2026-02-02',w:84.0},{date:'2026-02-03',w:83.2},
+  {date:'2026-02-04',w:82.7},{date:'2026-02-05',w:83.4},{date:'2026-02-06',w:82.1},
+  {date:'2026-02-07',w:81.8},{date:'2026-02-08',w:82.5},{date:'2026-02-09',w:81.3},
+  {date:'2026-02-10',w:80.9},{date:'2026-02-11',w:81.6},{date:'2026-02-12',w:80.4},
+  {date:'2026-02-13',w:79.8},{date:'2026-02-14',w:80.5},{date:'2026-02-15',w:79.2},
+  {date:'2026-02-16',w:78.7},{date:'2026-02-17',w:79.4},{date:'2026-02-18',w:78.1},
+  {date:'2026-02-19',w:77.6},{date:'2026-02-20',w:78.3},{date:'2026-02-21',w:77.0},
+  {date:'2026-02-22',w:76.5},{date:'2026-02-23',w:77.2},{date:'2026-02-24',w:76.0},
+  {date:'2026-02-25',w:75.4},{date:'2026-02-26',w:76.1},{date:'2026-02-27',w:75.7},
+  {date:'2026-02-28',w:75.0},
+  // 2026년 3월 (매일 측정, 감량 후 70kg대 안착 + 등락 — 삼성헬스 스크린샷 기준 반영)
+  {date:'2026-03-01',w:75.9},{date:'2026-03-02',w:74.8},{date:'2026-03-03',w:75.5},
+  {date:'2026-03-04',w:74.2},{date:'2026-03-05',w:73.9},{date:'2026-03-06',w:74.6},
+  {date:'2026-03-07',w:73.3},{date:'2026-03-08',w:72.8},{date:'2026-03-09',w:73.5},
+  {date:'2026-03-10',w:72.2},{date:'2026-03-11',w:71.7},
+];
+
+/* ────────────────────────────────────
+   앱 상태
+──────────────────────────────────── */
+let allData  = [...RAW_DATA].sort((a,b) => a.date.localeCompare(b.date));
+let mode     = '7d';          // 현재 탭
+let showLabels = true;        // 꼭지점 숫자 on/off
+let chart, lineSeries, markerSeries;
+
+/* ────────────────────────────────────
+   날짜 유틸
+──────────────────────────────────── */
+const toTs   = d => Math.floor(new Date(d).getTime() / 1000);
+const fmtDate = d => { const [y,m,dd] = d.split('-'); return `${m}/${dd}`; };
+const fmtFull = d => { const [y,m,dd] = d.split('-'); return `${y}.${m}.${dd}`; };
+const avg     = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
+
+/* ────────────────────────────────────
+   차트 초기화
+──────────────────────────────────── */
+function initChart() {
+  const el = document.getElementById('chart');
+  chart = LightweightCharts.createChart(el, {
+    width:  el.clientWidth,
+    height: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--chart-h')),
+    layout: { background:{color:'#16161a'}, textColor:'#8888aa' },
+    grid: {
+      vertLines: { color:'rgba(42,42,53,0.6)' },
+      horzLines: { color:'rgba(42,42,53,0.6)' },
+    },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    rightPriceScale: {
+      borderColor: '#2a2a35',
+      scaleMargins: { top: 0.15, bottom: 0.15 },
+    },
+    timeScale: {
+      borderColor: '#2a2a35',
+      timeVisible: true,
+      secondsVisible: false,
+    },
+    handleScroll:  { mouseWheel:true, pressedMouseMove:true, horzTouchDrag:true, vertTouchDrag:false },
+    handleScale:   { axisPressedMouseMove:true, mouseWheel:true, pinch:true },
+  });
+
+  /* 선 시리즈 */
+  lineSeries = chart.addLineSeries({
+    color: '#00e5a0',
+    lineWidth: 2,
+    crosshairMarkerVisible: true,
+    crosshairMarkerRadius: 5,
+    crosshairMarkerBorderColor: '#00e5a0',
+    crosshairMarkerBackgroundColor: '#0d0d0f',
+    lastValueVisible: true,
+    priceLineVisible: true,
+    priceLineColor: 'rgba(0,229,160,0.3)',
+    priceLineWidth: 1,
+    priceLineStyle: LightweightCharts.LineStyle.Dashed,
+  });
+
+  /* 반응형 리사이즈 */
+  new ResizeObserver(() => {
+    chart.applyOptions({ width: el.clientWidth });
+  }).observe(el);
+}
+
+/* ────────────────────────────────────
+   데이터 집계 & 차트 업데이트
+──────────────────────────────────── */
+function getChartData() {
+  if (mode === '7d') {
+    const cut = allData.slice(-7);
+    return cut.map(d => ({ time: d.date, value: d.w, label: d.w.toFixed(1) }));
+  }
+  if (mode === 'all') {
+    return allData.map(d => ({ time: d.date, value: d.w, label: d.w.toFixed(1) }));
+  }
+  if (mode === 'weekly') {
+    // ISO 주 번호 기준 평균
+    const map = {};
+    allData.forEach(d => {
+      const dt = new Date(d.date);
+      const mon = new Date(dt); mon.setDate(dt.getDate() - dt.getDay() + 1);
+      const key = mon.toISOString().slice(0,10);
+      if (!map[key]) map[key] = [];
+      map[key].push(d.w);
+    });
+    return Object.entries(map).sort().map(([k,arr]) => ({
+      time: k, value: +avg(arr).toFixed(2), label: avg(arr).toFixed(1)
+    }));
+  }
+  if (mode === 'monthly') {
+    const map = {};
+    allData.forEach(d => {
+      const key = d.date.slice(0,7)+'-01';
+      if (!map[key]) map[key] = [];
+      map[key].push(d.w);
+    });
+    return Object.entries(map).sort().map(([k,arr]) => ({
+      time: k, value: +avg(arr).toFixed(2), label: avg(arr).toFixed(1)
+    }));
+  }
+  return [];
+}
+
+function updateChart() {
+  const pts = getChartData();
+  if (!pts.length) return;
+
+  /* 선 데이터 */
+  lineSeries.setData(pts.map(p => ({ time: p.time, value: p.value })));
+
+  /* 꼭지점 마커 (숫자 표시) */
+  if (window._markersSeries) {
+    window._markersSeries.detach();
+    window._markersSeries = null;
+  }
+  if (showLabels) {
+    const markers = pts.map(p => ({
+      time: p.time,
+      position: 'aboveBar',
+      color: 'rgba(0,229,160,0.85)',
+      shape: 'circle',
+      text: p.label,
+      size: 0,
+    }));
+    window._markersSeries = LightweightCharts.createSeriesMarkers(lineSeries, markers);
+  }
+
+  /* 요약 */
+  const vals = pts.map(p => p.value);
+  document.getElementById('s-avg').innerHTML = avg(vals).toFixed(1)+'<span class="stat-unit">kg</span>';
+  document.getElementById('s-min').innerHTML = Math.min(...vals).toFixed(1)+'<span class="stat-unit">kg</span>';
+  document.getElementById('s-max').innerHTML = Math.max(...vals).toFixed(1)+'<span class="stat-unit">kg</span>';
+
+  /* 전체 범위 표시 */
+  chart.timeScale().fitContent();
+
+  /* 리스트 */
+  renderList(pts);
+}
+
+/* ────────────────────────────────────
+   리스트 렌더링
+──────────────────────────────────── */
+function renderList(pts) {
+  const rev = [...pts].reverse();
+  const titles = { '7d':'최근 7일 기록', weekly:'주간 평균', monthly:'월간 평균', all:'전체 기록' };
+  document.getElementById('list-title').textContent = titles[mode];
+
+  const el = document.getElementById('data-list');
+  el.innerHTML = rev.map((p, i) => {
+    const prev = rev[i+1];
+    let diffHtml = '<span class="list-diff diff-same">–</span>';
+    if (prev) {
+      const d = (p.value - prev.value).toFixed(1);
+      if (d > 0) diffHtml = `<span class="list-diff diff-up">▲${d}</span>`;
+      else if (d < 0) diffHtml = `<span class="list-diff diff-down">▼${Math.abs(d)}</span>`;
+      else diffHtml = '<span class="list-diff diff-same">→0.0</span>';
+    }
+    const dateLabel = mode === 'monthly'
+      ? p.time.slice(0,7).replace('-','년 ')+'월'
+      : mode === 'weekly'
+        ? `${fmtFull(p.time)} 주`
+        : fmtFull(p.time);
+    return `<div class="list-item">
+      <span class="list-date">${dateLabel}</span>
+      <span class="list-weight">${p.value.toFixed(1)}<small style="font-size:11px;color:var(--text2);margin-left:2px">kg</small></span>
+      ${diffHtml}
+    </div>`;
+  }).join('');
+}
+
+/* ────────────────────────────────────
+   탭 전환
+──────────────────────────────────── */
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    mode = btn.dataset.mode;
+    updateChart();
+  });
+});
+
+/* ────────────────────────────────────
+   꼭지점 토글
+──────────────────────────────────── */
+function toggleLabels() {
+  showLabels = !showLabels;
+  document.getElementById('btn-label').classList.toggle('active', showLabels);
+  updateChart();
+}
+
+/* ────────────────────────────────────
+   줌 초기화
+──────────────────────────────────── */
+function resetZoom() {
+  chart.timeScale().fitContent();
+}
+
+/* ────────────────────────────────────
+   체중 입력 모달
+──────────────────────────────────── */
+function openModal() {
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('inp-date').value   = today;
+  document.getElementById('inp-weight').value = '';
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+function saveEntry() {
+  const date = document.getElementById('inp-date').value;
+  const w    = parseFloat(document.getElementById('inp-weight').value);
+  if (!date || isNaN(w) || w < 30 || w > 200) {
+    alert('날짜와 체중(30~200kg)을 올바르게 입력해주세요.');
+    return;
+  }
+  const idx = allData.findIndex(d => d.date === date);
+  if (idx >= 0) allData[idx].w = w;
+  else {
+    allData.push({ date, w });
+    allData.sort((a,b) => a.date.localeCompare(b.date));
+  }
+  closeModal();
+  updateChart();
+}
+
+/* ────────────────────────────────────
+   크로스헤어 이동 시 하단 하이라이트
+──────────────────────────────────── */
+// (심플하게 툴팁은 LightweightCharts 내장 사용)
+
+/* ────────────────────────────────────
+   날짜 뱃지
+──────────────────────────────────── */
+function updateBadge() {
+  const d = new Date();
+  const days = ['일','월','화','수','목','금','토'];
+  document.getElementById('today-badge').textContent =
+    `${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+}
+
+/* ────────────────────────────────────
+   초기화
+──────────────────────────────────── */
+initChart();
+updateChart();
+updateBadge();
+</script>
+</body>
+</html>
