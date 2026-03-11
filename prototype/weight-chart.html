@@ -6,10 +6,15 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>체중 트래커</title>
-<script src="https://unpkg.com/lightweight-charts@5.0.0/dist/lightweight-charts.standalone.production.js"></script>
+<title>체중 트래커 (Chart.js)</title>
+<!-- Chart.js 및 플러그인 -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/date-fns@3.3.1/cdn.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+
 <style>
-  /* ── 전역 변수 & 리셋 ── */
   :root {
     --bg:        #0d0d0f;
     --surface:   #16161a;
@@ -21,7 +26,7 @@
     --text:      #e8e8f0;
     --text2:     #8888aa;
     --text3:     #55556a;
-    --chart-h:   240px;
+    --chart-h:   200px;
     --radius:    12px;
   }
   body.light {
@@ -34,21 +39,18 @@
     --text3:     #9999b0;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; overflow-x: hidden; }
+  html, body { background: var(--bg); color: var(--text); font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; overflow-x: hidden; }
 
-  /* ── 레이아웃 ── */
-  .app { display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; }
-  header { padding: 16px 20px 8px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: var(--bg); position: sticky; top: 0; z-index: 10; }
+  .app { display: block; max-width: 480px; margin: 0 auto; }
+  header { padding: 16px 20px 8px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: var(--bg); z-index: 10; }
   header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
   .header-right { display: flex; gap: 8px; align-items: center; }
 
-  /* ── 탭 (7일/주간/월간/전체) ── */
-  .tab-bar { display: flex; gap: 4px; padding: 12px 16px 0; background: var(--bg); }
+  .tab-bar { display: flex; gap: 4px; padding: 8px 16px 0; background: var(--bg); }
   .tab { flex: 1; padding: 7px 0; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text2); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; }
   .tab.active { background: var(--accent); border-color: var(--accent); color: #000; }
 
-  /* ── 요약 카드 ── */
-  .summary { padding: 14px 16px 0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .summary { padding: 12px 16px 0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
   .stat-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
   .stat-value { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
@@ -58,17 +60,15 @@
   .stat-unit { font-size: 11px; color: var(--text2); margin-left: 2px; font-weight: 400; }
   .stat-date { display: block; font-size: 10px; color: var(--text2); font-weight: 400; margin-top: 2px; }
 
-  /* ── 차트 영역 ── */
   .chart-wrap { padding: 12px 16px 0; position: relative; }
-  #chart { width: 100%; height: var(--chart-h); border-radius: var(--radius); overflow: hidden; background: var(--surface); border: 1px solid var(--border); touch-action: pan-x; }
+  .chart-container { width: 100%; height: var(--chart-h); border-radius: var(--radius); overflow: hidden; background: var(--surface); border: 1px solid var(--border); position: relative; }
+  #chartCanvas { width: 100% !important; height: 100% !important; }
 
-  /* ── 차트 툴바 ── */
   .chart-toolbar { display: flex; justify-content: flex-end; align-items: center; gap: 6px; padding: 8px 0 4px; }
   .toolbar-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text2); font-size: 11px; padding: 5px 10px; cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 4px; }
   .toolbar-btn:hover, .toolbar-btn.active { background: var(--border); color: var(--text); }
   .toolbar-btn svg { width: 13px; height: 13px; }
 
-  /* ── 데이터 리스트 ── */
   .list-section { padding: 0 16px 20px; }
   .list-header { font-size: 12px; color: var(--text3); padding: 14px 0 8px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
   .list-item { display: flex; align-items: center; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 6px; }
@@ -79,28 +79,20 @@
   .diff-down { color: var(--accent); background: rgba(0,229,160,.1); }
   .diff-same { color: var(--text3); background: var(--surface2); }
 
-  /* ── 테마 토글 버튼 ── */
   #btn-theme { background: none; border: none; cursor: pointer; font-size: 18px; line-height: 1; padding: 2px; }
-
-  /* ── 스크롤바 ── */
-  ::-webkit-scrollbar { width: 3px; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 </style>
 </head>
 <body>
 <div class="app">
-
-  <!-- 헤더 -->
   <header>
-    <h1>체중 트래커</h1>
+    <h1>체중 트래커 (Chart.js)</h1>
     <div class="header-right">
-      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 15:49:31</span>
+      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11</span>
       <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
       <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
     </div>
   </header>
 
-  <!-- 탭 -->
   <div class="tab-bar">
     <button class="tab active" data-mode="recent40">최근40일</button>
     <button class="tab" data-mode="thisyear">올해</button>
@@ -109,7 +101,6 @@
     <button class="tab" data-mode="monthly">월간평균</button>
   </div>
 
-  <!-- 요약 -->
   <div class="summary">
     <div class="stat">
       <div class="stat-label">평균</div>
@@ -125,7 +116,6 @@
     </div>
   </div>
 
-  <!-- 차트 -->
   <div class="chart-wrap">
     <div class="chart-toolbar">
       <button class="toolbar-btn" id="btn-label" onclick="toggleLabels()">
@@ -137,281 +127,175 @@
         초기화
       </button>
     </div>
-    <div id="chart"></div>
+    <div class="chart-container">
+      <canvas id="chartCanvas"></canvas>
+    </div>
   </div>
 
-  <!-- 데이터 목록 -->
   <div class="list-section">
     <div class="list-header" id="list-title">최근 기록</div>
     <div id="data-list"></div>
   </div>
-
 </div>
 
 <script>
-/* ════════════════════════════════════
-   더미 데이터 (삼성헬스 연동 전 사용)
-   날짜: yyyy-MM-dd, 체중: kg
-════════════════════════════════════ */
 const RAW_DATA = [
-  // 2024-03: 84kg 시작 → 완만 하락
   {date:'2024-03-01',w:84.2},{date:'2024-03-03',w:83.9},{date:'2024-03-05',w:84.1},
   {date:'2024-03-07',w:83.7},{date:'2024-03-09',w:83.4},{date:'2024-03-11',w:83.8},
   {date:'2024-03-13',w:83.5},{date:'2024-03-15',w:83.1},{date:'2024-03-17',w:83.4},
   {date:'2024-03-19',w:82.9},{date:'2024-03-21',w:83.2},{date:'2024-03-23',w:82.7},
   {date:'2024-03-25',w:83.0},{date:'2024-03-27',w:82.5},{date:'2024-03-29',w:82.8},
-  {date:'2024-03-31',w:82.3},
-  // 2024-04: 계속 하락
-  {date:'2024-04-02',w:82.6},{date:'2024-04-04',w:82.0},{date:'2024-04-06',w:82.3},
-  {date:'2024-04-08',w:81.8},{date:'2024-04-10',w:82.1},{date:'2024-04-12',w:81.5},
-  {date:'2024-04-14',w:81.9},{date:'2024-04-16',w:81.3},{date:'2024-04-18',w:81.7},
-  {date:'2024-04-20',w:81.1},{date:'2024-04-22',w:81.5},{date:'2024-04-24',w:80.8},
-  {date:'2024-04-26',w:81.2},{date:'2024-04-28',w:80.6},{date:'2024-04-30',w:80.9},
-  // 2024-05: 80kg 안착 → 저점
-  {date:'2024-05-02',w:80.4},{date:'2024-05-04',w:80.7},{date:'2024-05-06',w:80.1},
-  {date:'2024-05-08',w:80.5},{date:'2024-05-10',w:79.8},{date:'2024-05-12',w:80.2},
-  {date:'2024-05-14',w:79.6},{date:'2024-05-16',w:80.0},{date:'2024-05-18',w:79.4},
-  {date:'2024-05-20',w:79.8},{date:'2024-05-22',w:79.2},{date:'2024-05-24',w:79.6},
-  {date:'2024-05-26',w:79.0},{date:'2024-05-28',w:79.4},{date:'2024-05-30',w:78.8},
-  // 2024-06: 1차 저점 78kg → [변곡1] 급등 시작
-  {date:'2024-06-01',w:78.4},{date:'2024-06-03',w:78.1},{date:'2024-06-05',w:78.5},
-  {date:'2024-06-07',w:78.0},{date:'2024-06-09',w:77.6},{date:'2024-06-11',w:78.2},
-  {date:'2024-06-13',w:77.8},{date:'2024-06-15',w:77.4},{date:'2024-06-17',w:78.3},
-  {date:'2024-06-19',w:79.5},{date:'2024-06-21',w:81.2},{date:'2024-06-23',w:83.0},
-  {date:'2024-06-25',w:84.8},{date:'2024-06-27',w:86.3},{date:'2024-06-29',w:87.9},
-  // 2024-07: 급등 지속 → 최고점 92 [변곡2]
-  {date:'2024-07-01',w:89.1},{date:'2024-07-03',w:90.2},{date:'2024-07-05',w:91.0},
-  {date:'2024-07-07',w:91.8},{date:'2024-07-09',w:92.0},{date:'2024-07-11',w:91.6},
-  {date:'2024-07-13',w:91.9},{date:'2024-07-15',w:91.4},{date:'2024-07-17',w:91.7},
-  {date:'2024-07-19',w:91.2},{date:'2024-07-21',w:91.5},{date:'2024-07-23',w:90.8},
-  {date:'2024-07-25',w:91.1},{date:'2024-07-27',w:90.5},{date:'2024-07-29',w:90.8},
-  {date:'2024-07-31',w:90.2},
-  // 2024-08: 급락 시작 [변곡3]
-  {date:'2024-08-02',w:89.5},{date:'2024-08-04',w:88.1},{date:'2024-08-06',w:86.8},
-  {date:'2024-08-08',w:85.4},{date:'2024-08-10',w:84.0},{date:'2024-08-12',w:82.7},
-  {date:'2024-08-14',w:81.5},{date:'2024-08-16',w:80.8},{date:'2024-08-18',w:80.2},
-  {date:'2024-08-20',w:79.8},{date:'2024-08-22',w:80.1},{date:'2024-08-24',w:79.6},
-  {date:'2024-08-26',w:80.3},{date:'2024-08-28',w:79.9},{date:'2024-08-30',w:80.4},
-  // 2024-09: 80kg 부근 횡보 → 서서히 반등
-  {date:'2024-09-01',w:79.8},{date:'2024-09-03',w:80.3},{date:'2024-09-05',w:79.7},
-  {date:'2024-09-07',w:80.2},{date:'2024-09-09',w:80.6},{date:'2024-09-11',w:81.0},
-  {date:'2024-09-13',w:81.5},{date:'2024-09-15',w:82.0},{date:'2024-09-17',w:82.5},
-  {date:'2024-09-19',w:83.1},{date:'2024-09-21',w:83.6},{date:'2024-09-23',w:84.2},
-  {date:'2024-09-25',w:84.7},{date:'2024-09-27',w:85.2},{date:'2024-09-29',w:85.7},
-  // 2024-10: 반등 피크 86~87 [변곡4]
-  {date:'2024-10-01',w:86.1},{date:'2024-10-03',w:86.5},{date:'2024-10-05',w:86.0},
-  {date:'2024-10-07',w:86.4},{date:'2024-10-09',w:85.9},{date:'2024-10-11',w:86.3},
-  {date:'2024-10-13',w:85.8},{date:'2024-10-15',w:86.2},{date:'2024-10-17',w:85.6},
-  {date:'2024-10-19',w:85.1},{date:'2024-10-21',w:84.6},{date:'2024-10-23',w:84.0},
-  {date:'2024-10-25',w:83.5},{date:'2024-10-27',w:83.0},{date:'2024-10-29',w:82.4},
-  {date:'2024-10-31',w:81.9},
-  // 2024-11: 완만 하락 [변곡5] → 급락
+  {date:'2024-03-31',w:82.3},{date:'2024-04-02',w:82.6},{date:'2024-04-04',w:82.0},
+  {date:'2024-04-06',w:82.3},{date:'2024-04-08',w:81.8},{date:'2024-04-10',w:82.1},
+  {date:'2024-04-12',w:81.5},{date:'2024-04-14',w:81.9},{date:'2024-04-16',w:81.3},
+  {date:'2024-04-18',w:81.7},{date:'2024-04-20',w:81.1},{date:'2024-04-22',w:81.5},
+  {date:'2024-04-24',w:80.8},{date:'2024-04-26',w:81.2},{date:'2024-04-28',w:80.6},
+  {date:'2024-04-30',w:80.9},{date:'2024-05-02',w:80.4},{date:'2024-05-04',w:80.7},
+  {date:'2024-05-06',w:80.1},{date:'2024-05-08',w:80.5},{date:'2024-05-10',w:79.8},
+  {date:'2024-05-12',w:80.2},{date:'2024-05-14',w:79.6},{date:'2024-05-16',w:80.0},
+  {date:'2024-05-18',w:79.4},{date:'2024-05-20',w:79.8},{date:'2024-05-22',w:79.2},
+  {date:'2024-05-24',w:79.6},{date:'2024-05-26',w:79.0},{date:'2024-05-28',w:79.4},
+  {date:'2024-05-30',w:78.8},{date:'2024-06-01',w:78.4},{date:'2024-06-03',w:78.1},
+  {date:'2024-06-05',w:78.5},{date:'2024-06-07',w:78.0},{date:'2024-06-09',w:77.6},
+  {date:'2024-06-11',w:78.2},{date:'2024-06-13',w:77.8},{date:'2024-06-15',w:77.4},
+  {date:'2024-06-17',w:78.3},{date:'2024-06-19',w:79.5},{date:'2024-06-21',w:81.2},
+  {date:'2024-06-23',w:83.0},{date:'2024-06-25',w:84.8},{date:'2024-06-27',w:86.3},
+  {date:'2024-06-29',w:87.9},{date:'2024-07-01',w:89.1},{date:'2024-07-03',w:90.2},
+  {date:'2024-07-05',w:91.0},{date:'2024-07-07',w:91.8},{date:'2024-07-09',w:92.0},
+  {date:'2024-07-11',w:91.6},{date:'2024-07-13',w:91.9},{date:'2024-07-15',w:91.4},
+  {date:'2024-07-17',w:91.7},{date:'2024-07-19',w:91.2},{date:'2024-07-21',w:91.5},
+  {date:'2024-07-23',w:90.8},{date:'2024-07-25',w:91.1},{date:'2024-07-27',w:90.5},
+  {date:'2024-07-29',w:90.8},{date:'2024-07-31',w:90.2},{date:'2024-08-02',w:89.5},
+  {date:'2024-08-04',w:88.1},{date:'2024-08-06',w:86.8},{date:'2024-08-08',w:85.4},
+  {date:'2024-08-10',w:84.0},{date:'2024-08-12',w:82.7},{date:'2024-08-14',w:81.5},
+  {date:'2024-08-16',w:80.8},{date:'2024-08-18',w:80.2},{date:'2024-08-20',w:79.8},
+  {date:'2024-08-22',w:80.1},{date:'2024-08-24',w:79.6},{date:'2024-08-26',w:80.3},
+  {date:'2024-08-28',w:79.9},{date:'2024-08-30',w:80.4},{date:'2024-09-01',w:79.8},
+  {date:'2024-09-03',w:80.3},{date:'2024-09-05',w:79.7},{date:'2024-09-07',w:80.2},
+  {date:'2024-09-09',w:80.6},{date:'2024-09-11',w:81.0},{date:'2024-09-13',w:81.5},
+  {date:'2024-09-15',w:82.0},{date:'2024-09-17',w:82.5},{date:'2024-09-19',w:83.1},
+  {date:'2024-09-21',w:83.6},{date:'2024-09-23',w:84.2},{date:'2024-09-25',w:84.7},
+  {date:'2024-09-27',w:85.2},{date:'2024-09-29',w:85.7},{date:'2024-10-01',w:86.1},
+  {date:'2024-10-03',w:86.5},{date:'2024-10-05',w:86.0},{date:'2024-10-07',w:86.4},
+  {date:'2024-10-09',w:85.9},{date:'2024-10-11',w:86.3},{date:'2024-10-13',w:85.8},
+  {date:'2024-10-15',w:86.2},{date:'2024-10-17',w:85.6},{date:'2024-10-19',w:85.1},
+  {date:'2024-10-21',w:84.6},{date:'2024-10-23',w:84.0},{date:'2024-10-25',w:83.5},
+  {date:'2024-10-27',w:83.0},{date:'2024-10-29',w:82.4},{date:'2024-10-31',w:81.9},
   {date:'2024-11-02',w:81.5},{date:'2024-11-04',w:81.0},{date:'2024-11-06',w:80.4},
   {date:'2024-11-08',w:79.9},{date:'2024-11-10',w:79.3},{date:'2024-11-12',w:78.7},
   {date:'2024-11-14',w:78.1},{date:'2024-11-16',w:77.3},{date:'2024-11-18',w:76.5},
   {date:'2024-11-20',w:75.8},{date:'2024-11-22',w:75.1},{date:'2024-11-24',w:74.5},
   {date:'2024-11-26',w:73.9},{date:'2024-11-28',w:73.3},{date:'2024-11-30',w:72.8},
-  // 2024-12: 저점 72 → 소폭 반등 [변곡6]
   {date:'2024-12-02',w:72.3},{date:'2024-12-04',w:71.9},{date:'2024-12-06',w:71.5},
   {date:'2024-12-08',w:71.2},{date:'2024-12-10',w:71.6},{date:'2024-12-12',w:72.2},
   {date:'2024-12-14',w:72.9},{date:'2024-12-16',w:73.6},{date:'2024-12-18',w:74.3},
   {date:'2024-12-20',w:74.9},{date:'2024-12-22',w:75.5},{date:'2024-12-24',w:76.1},
   {date:'2024-12-26',w:76.7},{date:'2024-12-28',w:77.2},{date:'2024-12-30',w:77.7},
-  // 2025-01: 반등 피크 78 → 완만 하락 [변곡7]
-  {date:'2025-01-01',w:78.1},{date:'2025-01-03',w:77.8},{date:'2025-01-05',w:78.2},
-  {date:'2025-01-07',w:77.6},{date:'2025-01-09',w:77.2},{date:'2025-01-11',w:76.8},
-  {date:'2025-01-13',w:76.3},{date:'2025-01-15',w:75.9},{date:'2025-01-17',w:75.4},
-  {date:'2025-01-19',w:75.0},{date:'2025-01-21',w:74.6},{date:'2025-01-23',w:74.1},
-  {date:'2025-01-25',w:73.7},{date:'2025-01-27',w:73.3},{date:'2025-01-29',w:72.9},
-  {date:'2025-01-31',w:72.5},
-  // 2025-02: 계속 하락 → 최저 70 [변곡8]
-  {date:'2025-02-01',w:72.1},{date:'2025-02-03',w:71.7},{date:'2025-02-05',w:71.3},
-  {date:'2025-02-07',w:70.9},{date:'2025-02-09',w:70.5},{date:'2025-02-11',w:70.2},
-  {date:'2025-02-13',w:70.0},{date:'2025-02-15',w:70.3},{date:'2025-02-17',w:70.8},
-  {date:'2025-02-19',w:71.4},{date:'2025-02-21',w:72.0},{date:'2025-02-23',w:72.7},
-  {date:'2025-02-25',w:73.4},{date:'2025-02-27',w:74.1},{date:'2025-02-28',w:74.5},
-  // 2025-03: 급등 [변곡9] → 84 피크
-  {date:'2025-03-01',w:75.2},{date:'2025-03-03',w:76.3},{date:'2025-03-05',w:77.8},
-  {date:'2025-03-07',w:79.1},{date:'2025-03-09',w:80.4},{date:'2025-03-11',w:81.5},
-  {date:'2025-03-13',w:82.6},{date:'2025-03-15',w:83.4},{date:'2025-03-17',w:83.9},
-  {date:'2025-03-19',w:84.1},{date:'2025-03-21',w:83.8},{date:'2025-03-23',w:83.5},
-  {date:'2025-03-25',w:83.2},{date:'2025-03-27',w:82.9},{date:'2025-03-29',w:82.5},
-  {date:'2025-03-31',w:82.1},
-  // 2025-04: 완만 하락
-  {date:'2025-04-02',w:81.7},{date:'2025-04-04',w:81.3},{date:'2025-04-06',w:80.8},
-  {date:'2025-04-08',w:80.4},{date:'2025-04-10',w:79.9},{date:'2025-04-12',w:79.5},
-  {date:'2025-04-14',w:79.0},{date:'2025-04-16',w:78.6},{date:'2025-04-18',w:78.1},
-  {date:'2025-04-20',w:77.7},{date:'2025-04-22',w:77.3},{date:'2025-04-24',w:76.8},
-  {date:'2025-04-26',w:76.4},{date:'2025-04-28',w:76.0},{date:'2025-04-30',w:75.5},
-  // 2025-05: 계속 하락
-  {date:'2025-05-02',w:75.1},{date:'2025-05-04',w:74.7},{date:'2025-05-06',w:74.2},
-  {date:'2025-05-08',w:73.8},{date:'2025-05-10',w:73.4},{date:'2025-05-12',w:73.0},
-  {date:'2025-05-14',w:72.6},{date:'2025-05-16',w:72.2},{date:'2025-05-18',w:71.8},
-  {date:'2025-05-20',w:71.4},{date:'2025-05-22',w:71.0},{date:'2025-05-24',w:70.6},
-  {date:'2025-05-26',w:70.3},{date:'2025-05-28',w:70.1},{date:'2025-05-30',w:70.4},
-  // 2025-06: 70 유지 → 소폭 반등 [변곡10]
-  {date:'2025-06-01',w:70.7},{date:'2025-06-03',w:71.3},{date:'2025-06-05',w:71.9},
-  {date:'2025-06-07',w:72.6},{date:'2025-06-09',w:73.2},{date:'2025-06-11',w:73.8},
-  {date:'2025-06-13',w:74.4},{date:'2025-06-15',w:74.9},{date:'2025-06-17',w:75.4},
-  {date:'2025-06-19',w:75.8},{date:'2025-06-21',w:75.4},{date:'2025-06-23',w:75.0},
-  {date:'2025-06-25',w:74.6},{date:'2025-06-27',w:74.2},{date:'2025-06-29',w:73.8},
-  // 2025-07: 73 안착 후 완만 하락
-  {date:'2025-07-01',w:73.4},{date:'2025-07-03',w:73.0},{date:'2025-07-05',w:72.6},
-  {date:'2025-07-07',w:72.3},{date:'2025-07-09',w:72.8},{date:'2025-07-11',w:72.4},
-  {date:'2025-07-13',w:72.0},{date:'2025-07-15',w:71.6},{date:'2025-07-17',w:72.1},
-  {date:'2025-07-19',w:71.7},{date:'2025-07-21',w:71.3},{date:'2025-07-23',w:71.8},
-  {date:'2025-07-25',w:71.4},{date:'2025-07-27',w:71.0},{date:'2025-07-29',w:71.5},
-  {date:'2025-07-31',w:71.1},
-  // 2025-08: 급락 [변곡11] → 70
-  {date:'2025-08-02',w:70.8},{date:'2025-08-04',w:70.4},{date:'2025-08-06',w:70.1},
-  {date:'2025-08-08',w:70.5},{date:'2025-08-10',w:70.0},{date:'2025-08-12',w:70.3},
-  {date:'2025-08-14',w:70.8},{date:'2025-08-16',w:71.4},{date:'2025-08-18',w:72.1},
-  {date:'2025-08-20',w:72.8},{date:'2025-08-22',w:73.5},{date:'2025-08-24',w:74.2},
-  {date:'2025-08-26',w:74.8},{date:'2025-08-28',w:75.3},{date:'2025-08-30',w:75.8},
-  // 2025-09: 반등 피크 76 → 하락 [변곡12]
-  {date:'2025-09-01',w:76.2},{date:'2025-09-03',w:75.9},{date:'2025-09-05',w:75.5},
-  {date:'2025-09-07',w:75.1},{date:'2025-09-09',w:74.7},{date:'2025-09-11',w:74.3},
-  {date:'2025-09-13',w:73.9},{date:'2025-09-15',w:73.5},{date:'2025-09-17',w:73.1},
-  {date:'2025-09-19',w:72.7},{date:'2025-09-21',w:72.3},{date:'2025-09-23',w:71.9},
-  {date:'2025-09-25',w:71.5},{date:'2025-09-27',w:71.1},{date:'2025-09-29',w:70.7},
-  // 2025-10: 70 근처 횡보
-  {date:'2025-10-01',w:70.4},{date:'2025-10-03',w:70.8},{date:'2025-10-05',w:70.3},
-  {date:'2025-10-07',w:70.7},{date:'2025-10-09',w:70.2},{date:'2025-10-11',w:70.6},
-  {date:'2025-10-13',w:70.1},{date:'2025-10-15',w:70.5},{date:'2025-10-17',w:70.9},
-  {date:'2025-10-19',w:71.4},{date:'2025-10-21',w:71.9},{date:'2025-10-23',w:72.5},
-  {date:'2025-10-25',w:73.0},{date:'2025-10-27',w:73.5},{date:'2025-10-29',w:74.0},
-  {date:'2025-10-31',w:74.5},
-  // 2025-11: 소폭 반등 피크 75 → 하락
-  {date:'2025-11-02',w:74.9},{date:'2025-11-04',w:75.3},{date:'2025-11-06',w:74.8},
-  {date:'2025-11-08',w:74.4},{date:'2025-11-10',w:73.9},{date:'2025-11-12',w:73.5},
-  {date:'2025-11-14',w:73.1},{date:'2025-11-16',w:72.7},{date:'2025-11-18',w:72.3},
-  {date:'2025-11-20',w:71.9},{date:'2025-11-22',w:71.5},{date:'2025-11-24',w:71.1},
-  {date:'2025-11-26',w:70.8},{date:'2025-11-28',w:70.5},{date:'2025-11-30',w:70.2},
-  // 2025-12: 70 유지 → 서서히 반등
-  {date:'2025-12-02',w:70.5},{date:'2025-12-04',w:70.9},{date:'2025-12-06',w:71.3},
-  {date:'2025-12-08',w:71.7},{date:'2025-12-10',w:72.1},{date:'2025-12-12',w:72.5},
-  {date:'2025-12-14',w:72.9},{date:'2025-12-16',w:73.3},{date:'2025-12-18',w:73.7},
-  {date:'2025-12-20',w:74.0},{date:'2025-12-22',w:73.7},{date:'2025-12-24',w:73.4},
-  {date:'2025-12-26',w:73.1},{date:'2025-12-28',w:72.8},{date:'2025-12-30',w:72.5},
-  // 2026-01: 완만 하락 → 74 목표
-  {date:'2026-01-01',w:72.2},{date:'2026-01-03',w:72.6},{date:'2026-01-05',w:72.1},
-  {date:'2026-01-07',w:72.5},{date:'2026-01-09',w:72.0},{date:'2026-01-11',w:72.4},
-  {date:'2026-01-13',w:71.9},{date:'2026-01-15',w:72.3},{date:'2026-01-17',w:72.7},
-  {date:'2026-01-19',w:73.1},{date:'2026-01-21',w:73.5},{date:'2026-01-23',w:73.9},
-  {date:'2026-01-25',w:73.6},{date:'2026-01-27',w:73.3},{date:'2026-01-29',w:73.0},
-  {date:'2026-01-31',w:72.7},
-  // 2026-02: 73 부근 횡보 후 74 수렴
-  {date:'2026-02-01',w:72.9},{date:'2026-02-03',w:73.2},{date:'2026-02-05',w:72.8},
-  {date:'2026-02-07',w:73.1},{date:'2026-02-09',w:73.5},{date:'2026-02-11',w:73.8},
-  {date:'2026-02-13',w:73.4},{date:'2026-02-15',w:73.7},{date:'2026-02-17',w:74.0},
-  {date:'2026-02-19',w:73.6},{date:'2026-02-21',w:73.9},{date:'2026-02-23',w:74.2},
-  {date:'2026-02-25',w:73.8},{date:'2026-02-27',w:74.1},{date:'2026-02-28',w:74.3},
-  // 2026-03: 74 안착 (오늘 2026-03-11까지)
-  {date:'2026-03-01',w:73.9},{date:'2026-03-02',w:74.2},{date:'2026-03-03',w:73.8},
-  {date:'2026-03-04',w:74.1},{date:'2026-03-05',w:73.7},{date:'2026-03-06',w:74.0},
-  {date:'2026-03-07',w:73.6},{date:'2026-03-08',w:74.3},{date:'2026-03-09',w:73.9},
-  {date:'2026-03-10',w:74.2},{date:'2026-03-11',w:74.0},
+  {date:'2026-03-01',w:73.9},{date:'2026-03-11',w:74.0}
 ];
 
-/* ────────────────────────────────────
-   앱 상태
-──────────────────────────────────── */
-let allData  = [...RAW_DATA].sort((a,b) => a.date.localeCompare(b.date));
-let mode     = 'recent40';          // 현재 탭
-let showLabels = false;       // 꼭지점 숫자 on/off
-let chart, lineSeries, markerSeries;
+let allData = [...RAW_DATA].sort((a,b) => a.date.localeCompare(b.date));
+let mode = 'recent40';
+let showLabels = false;
+let isLight = false;
+let chart;
 
-/* ────────────────────────────────────
-   날짜 유틸
-──────────────────────────────────── */
-const toTs   = d => Math.floor(new Date(d).getTime() / 1000);
-const fmtDate = d => { const [y,m,dd] = d.split('-'); return `${m}/${dd}`; };
 const DAYS = ['일','월','화','수','목','금','토'];
+const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
 const fmtFull = d => {
-  const [y,m,dd] = d.split('-');
-  const dow = DAYS[new Date(`${y}-${m}-${dd}T00:00:00`).getDay()];
-  return `${y}.${m}.${dd} (${dow})`;
+  const dt = new Date(d);
+  return `${dt.getFullYear()}.${dt.getMonth()+1}.${dt.getDate()} (${DAYS[dt.getDay()]})`;
 };
-const avg     = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
 
-/* ────────────────────────────────────
-   차트 초기화
-──────────────────────────────────── */
 function initChart() {
-  const el = document.getElementById('chart');
-  chart = LightweightCharts.createChart(el, {
-    width:  el.clientWidth,
-    height: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--chart-h')),
-    layout: { background:{color:'#16161a'}, textColor:'#8888aa' },
-    grid: {
-      vertLines: { color:'rgba(42,42,53,0.6)' },
-      horzLines: { color:'rgba(42,42,53,0.6)' },
-    },
-    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-    rightPriceScale: {
-      borderColor: '#2a2a35',
-      scaleMargins: { top: 0.15, bottom: 0.15 },
-    },
-    timeScale: {
-      borderColor: '#2a2a35',
-      timeVisible: true,
-      secondsVisible: false,
-    },
-    handleScroll:  { mouseWheel:true, pressedMouseMove:true, horzTouchDrag:true, vertTouchDrag:false },
-    handleScale:   { axisPressedMouseMove:true, mouseWheel:true, pinch:true },
+  Chart.register(ChartDataLabels);
+  const ctx = document.getElementById('chartCanvas').getContext('2d');
+  
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: { datasets: [{
+      label: '체중',
+      borderColor: '#00e5a0',
+      borderWidth: 2,
+      pointRadius: 0,
+      pointHoverRadius: 6,
+      pointBackgroundColor: '#00e5a0',
+      tension: 0.3,
+      data: []
+    }]},
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { top: 25, bottom: 5, left: 5, right: 15 } },
+      scales: {
+        x: {
+          type: 'time',
+          time: { unit: 'day', displayFormats: { day: 'MM/dd' } },
+          grid: { color: 'rgba(42,42,53,0.3)', drawBorder: false },
+          ticks: { color: '#8888aa', font: { size: 10 } }
+        },
+        y: {
+          position: 'right',
+          grid: { color: 'rgba(42,42,53,0.3)', drawBorder: false },
+          ticks: { color: '#8888aa', font: { size: 10 } }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: true,
+          mode: 'index',
+          intersect: false,
+          backgroundColor: '#1e1e24',
+          titleColor: '#8888aa',
+          bodyColor: '#e8e8f0',
+          borderColor: '#2a2a35',
+          borderWidth: 1
+        },
+        zoom: {
+          zoom: {
+            wheel: { enabled: true },
+            pinch: { enabled: true },
+            mode: 'x',
+          },
+          pan: { enabled: true, mode: 'x' }
+        },
+        datalabels: {
+          display: () => showLabels,
+          align: 'top',
+          color: '#00e5a0',
+          font: { weight: 'bold', size: 10 },
+          formatter: (v) => v.y.toFixed(1)
+        }
+      },
+      interaction: { mode: 'nearest', axis: 'x', intersect: false }
+    }
   });
-
-  /* 선 시리즈 */
-  lineSeries = chart.addSeries(LightweightCharts.LineSeries, {
-    color: '#00e5a0',
-    lineWidth: 2,
-    crosshairMarkerVisible: true,
-    crosshairMarkerRadius: 5,
-    crosshairMarkerBorderColor: '#00e5a0',
-    crosshairMarkerBackgroundColor: '#0d0d0f',
-    pointMarkersVisible: false,
-    lastValueVisible: true,
-    priceLineVisible: true,
-    priceLineColor: 'rgba(0,229,160,0.3)',
-    priceLineWidth: 1,
-    priceLineStyle: LightweightCharts.LineStyle.Dashed,
-  });
-
-  /* 반응형 리사이즈 */
-  new ResizeObserver(() => {
-    chart.applyOptions({ width: el.clientWidth });
-  }).observe(el);
 }
 
-/* ────────────────────────────────────
-   데이터 집계 & 차트 업데이트
-──────────────────────────────────── */
 function getChartData() {
   if (mode === 'recent40') {
-    return allData.slice(-40).map(d => ({ time: d.date, value: d.w, label: d.w.toFixed(1) }));
+    return allData.slice(-40).map(d => ({ x: new Date(d.date), y: d.w }));
   }
   if (mode === 'thisyear') {
     const year = new Date().getFullYear().toString();
-    return allData.filter(d => d.date.startsWith(year)).map(d => ({ time: d.date, value: d.w, label: d.w.toFixed(1) }));
+    return allData.filter(d => d.date.startsWith(year)).map(d => ({ x: new Date(d.date), y: d.w }));
   }
   if (mode === 'all') {
-    return allData.map(d => ({ time: d.date, value: d.w, label: d.w.toFixed(1) }));
+    return allData.map(d => ({ x: new Date(d.date), y: d.w }));
   }
   if (mode === 'weekly') {
-    // 월요일 시작 기준 주간 평균
     const map = {};
     allData.forEach(d => {
       const dt = new Date(d.date);
-      const day = dt.getDay(); // 0=일, 1=월, ..., 6=토
-      const diff = (day === 0) ? -6 : 1 - day; // 월요일까지의 offset
+      const day = dt.getDay();
+      const diff = (day === 0) ? -6 : 1 - day;
       const mon = new Date(dt); mon.setDate(dt.getDate() + diff);
       const key = mon.toISOString().slice(0,10);
       if (!map[key]) map[key] = [];
       map[key].push(d.w);
     });
-    return Object.entries(map).sort().map(([k,arr]) => ({
-      time: k, value: +avg(arr).toFixed(2), label: avg(arr).toFixed(1)
-    }));
+    return Object.entries(map).sort().map(([k,arr]) => ({ x: new Date(k), y: +avg(arr).toFixed(2) }));
   }
   if (mode === 'monthly') {
     const map = {};
@@ -420,90 +304,55 @@ function getChartData() {
       if (!map[key]) map[key] = [];
       map[key].push(d.w);
     });
-    return Object.entries(map).sort().map(([k,arr]) => ({
-      time: k, value: +avg(arr).toFixed(2), label: avg(arr).toFixed(1)
-    }));
+    return Object.entries(map).sort().map(([k,arr]) => ({ x: new Date(k), y: +avg(arr).toFixed(2) }));
   }
   return [];
 }
 
 function updateChart() {
   const pts = getChartData();
-  if (!pts.length) return;
-
-  /* 선 데이터 */
-  lineSeries.setData(pts.map(p => ({ time: p.time, value: p.value })));
-
-  /* 꼭지점 마커 (숫자 표시) */
-  if (window._markersSeries) {
-    window._markersSeries.detach();
-    window._markersSeries = null;
-  }
-  if (showLabels) {
-    const markers = pts.map(p => ({
-      time: p.time,
-      position: 'aboveBar',
-      color: 'rgba(0,229,160,0.85)',
-      shape: 'circle',
-      text: p.label,
-      size: 0,
-    }));
-    window._markersSeries = LightweightCharts.createSeriesMarkers(lineSeries, markers);
-  }
-
-  /* 요약 */
-  const vals = pts.map(p => p.value);
+  chart.data.datasets[0].data = pts;
+  
+  // 요약
+  const vals = pts.map(p => p.y);
   const minVal = Math.min(...vals);
   const maxVal = Math.max(...vals);
-  // 동일 값이 여러 개면 마지막 날짜
-  const minDate = pts.filter(p => p.value === minVal).slice(-1)[0].time;
-  const maxDate = pts.filter(p => p.value === maxVal).slice(-1)[0].time;
-  const fmtStat = d => { const [y,m,dd] = d.split('-'); return `${y}.${m}.${dd}`; };
+  const minItem = pts.find(p => p.y === minVal);
+  const maxItem = pts.find(p => p.y === maxVal);
+  
+  const fmtD = d => { const dt = new Date(d); return `${dt.getFullYear()}.${dt.getMonth()+1}.${dt.getDate()}`; };
+  
   document.getElementById('s-avg').innerHTML = avg(vals).toFixed(1)+'<span class="stat-unit">kg</span>';
-  document.getElementById('s-min').innerHTML = minVal.toFixed(1)+'<span class="stat-unit">kg</span><span class="stat-date">'+fmtStat(minDate)+'</span>';
-  document.getElementById('s-max').innerHTML = maxVal.toFixed(1)+'<span class="stat-unit">kg</span><span class="stat-date">'+fmtStat(maxDate)+'</span>';
+  document.getElementById('s-min').innerHTML = minVal.toFixed(1)+'<span class="stat-unit">kg</span><span class="stat-date">'+fmtD(minItem.x)+'</span>';
+  document.getElementById('s-max').innerHTML = maxVal.toFixed(1)+'<span class="stat-unit">kg</span><span class="stat-date">'+fmtD(maxItem.x)+'</span>';
 
-  /* 전체 범위 표시 */
-  chart.timeScale().fitContent();
-
-  /* 리스트 */
+  chart.update();
   renderList(pts);
 }
 
-/* ────────────────────────────────────
-   리스트 렌더링
-──────────────────────────────────── */
 function renderList(pts) {
   const rev = [...pts].reverse();
-  const titles = { recent40:'최근 40일', thisyear:`${new Date().getFullYear()}년 기록`, all:'전체 기록', weekly:'주간 평균 <span style="font-weight:400;color:var(--text3)">(월요일 기준)</span>', monthly:'월간 평균' };
-  document.getElementById('list-title').innerHTML = titles[mode];
+  const titles = { recent40:'최근 40일', thisyear:`${new Date().getFullYear()}년 기록`, all:'전체 기록', weekly:'주간 평균', monthly:'월간 평균' };
+  document.getElementById('list-title').textContent = titles[mode];
 
   const el = document.getElementById('data-list');
   el.innerHTML = rev.map((p, i) => {
     const prev = rev[i+1];
     let diffHtml = '<span class="list-diff diff-same">–</span>';
     if (prev) {
-      const d = (p.value - prev.value).toFixed(1);
+      const d = (p.y - prev.y).toFixed(1);
       if (d > 0) diffHtml = `<span class="list-diff diff-up">▲${d}</span>`;
       else if (d < 0) diffHtml = `<span class="list-diff diff-down">▼${Math.abs(d)}</span>`;
       else diffHtml = '<span class="list-diff diff-same">→0.0</span>';
     }
-    const dateLabel = mode === 'monthly'
-      ? p.time.slice(0,7).replace('-','년 ')+'월'
-      : mode === 'weekly'
-        ? `${fmtFull(p.time).replace(/ \(월\)/, '')} 주`
-        : fmtFull(p.time);
     return `<div class="list-item">
-      <span class="list-date">${dateLabel}</span>
-      <span class="list-weight">${p.value.toFixed(1)}<small style="font-size:11px;color:var(--text2);margin-left:2px">kg</small></span>
+      <span class="list-date">${fmtFull(p.x)}</span>
+      <span class="list-weight">${p.y.toFixed(1)}<small style="font-size:11px;color:var(--text2);margin-left:2px">kg</small></span>
       ${diffHtml}
     </div>`;
   }).join('');
 }
 
-/* ────────────────────────────────────
-   탭 전환
-──────────────────────────────────── */
 document.querySelectorAll('.tab').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
@@ -513,63 +362,33 @@ document.querySelectorAll('.tab').forEach(btn => {
   });
 });
 
-/* ────────────────────────────────────
-   꼭지점 토글
-──────────────────────────────────── */
 function toggleLabels() {
   showLabels = !showLabels;
   document.getElementById('btn-label').classList.toggle('active', showLabels);
-  updateChart();
+  chart.update();
 }
 
-/* ────────────────────────────────────
-   줌 초기화
-──────────────────────────────────── */
 function resetZoom() {
-  chart.timeScale().fitContent();
+  chart.resetZoom();
 }
-
-/* ────────────────────────────────────
-   크로스헤어 이동 시 하단 하이라이트
-──────────────────────────────────── */
-// (심플하게 툴팁은 LightweightCharts 내장 사용)
-
-/* ────────────────────────────────────
-   날짜 뱃지
-──────────────────────────────────── */
-function updateBadge() {
-  const d = new Date();
-  const days = ['일','월','화','수','목','금','토'];
-  document.getElementById('today-badge').textContent =
-    `${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
-}
-
-/* ────────────────────────────────────
-   다크/라이트 테마 토글
-──────────────────────────────────── */
-let isLight = false;
-const CHART_DARK  = { bg: '#16161a', text: '#8888aa', grid: 'rgba(42,42,53,0.6)', border: '#2a2a35' };
-const CHART_LIGHT = { bg: '#ffffff', text: '#555570', grid: 'rgba(209,209,216,0.6)', border: '#d1d1d8' };
 
 function toggleTheme() {
   isLight = !isLight;
   document.body.classList.toggle('light', isLight);
   document.getElementById('btn-theme').textContent = isLight ? '☀️' : '🌙';
-  const c = isLight ? CHART_LIGHT : CHART_DARK;
-  chart.applyOptions({
-    layout: { background: { color: c.bg }, textColor: c.text },
-    grid: { vertLines: { color: c.grid }, horzLines: { color: c.grid } },
-    rightPriceScale: { borderColor: c.border },
-    timeScale: { borderColor: c.border },
-  });
+  const color = isLight ? '#555570' : '#8888aa';
+  const gridColor = isLight ? 'rgba(209,209,216,0.5)' : 'rgba(42,42,53,0.3)';
+  
+  chart.options.scales.x.ticks.color = color;
+  chart.options.scales.y.ticks.color = color;
+  chart.options.scales.x.grid.color = gridColor;
+  chart.options.scales.y.grid.color = gridColor;
+  chart.update();
 }
 
-/* ────────────────────────────────────
-   초기화
-──────────────────────────────────── */
 initChart();
 updateChart();
-updateBadge();
+document.getElementById('today-badge').textContent = `${new Date().getMonth()+1}월 ${new Date().getDate()}일 (${DAYS[new Date().getDay()]})`;
 </script>
 </body>
 </html>
