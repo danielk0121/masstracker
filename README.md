@@ -385,3 +385,12 @@ Lightweight Charts는 금융 차트용이라 체중 데이터에 불필요한 �
   - `prototype/weight-chart.html`의 `updateStats` 함수 내 `fmtStat` 로직 수정.
   - 날짜 형식에 `(요일)`을 추가 (예: 2026.03.11 (수)).
 - **예상 결과**: 요약 카드에서 해당 포인트의 날짜와 요일을 한눈에 확인 가능.
+
+---
+
+### 작업 계획: 좌우 레이아웃 여백 축소
+- **목표**: 차트와 콘텐츠의 가독성을 높이기 위해 전체적인 좌우 여백을 약 50%로 줄임.
+- **수정 내용**: 
+  - `prototype/weight-chart.html`의 `header`, `tab-bar`, `summary`, `goal-panel`, `chart-wrap`, `list-section`의 좌우 `padding` 값을 절반으로 축소.
+  - 헤더 20px -> 10px, 기타 섹션 16px -> 8px.
+- **예상 결과**: 화면 양옆의 여백이 줄어들어 콘텐츠가 더 넓고 빽빽하게 표시됨.
