@@ -7,7 +7,10 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>체중 트래커</title>
-<script src="https://unpkg.com/lightweight-charts@5.0.0/dist/lightweight-charts.standalone.production.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <style>
   /* ── 전역 변수 & 리셋 ── */
   :root {
@@ -60,7 +63,8 @@
 
   /* ── 차트 영역 ── */
   .chart-wrap { padding: 12px 16px 0; position: relative; }
-  #chart { width: 100%; height: var(--chart-h); border-radius: var(--radius); overflow: hidden; background: var(--surface); border: 1px solid var(--border); touch-action: pan-x; }
+  .chart-container { width: 100%; height: var(--chart-h); border-radius: var(--radius); overflow: hidden; background: var(--surface); border: 1px solid var(--border); position: relative; }
+  .chart-container canvas { width: 100% !important; height: 100% !important; }
 
   /* ── 차트 툴바 ── */
   .chart-toolbar { display: flex; justify-content: flex-end; align-items: center; gap: 6px; padding: 8px 0 4px; }
@@ -94,7 +98,7 @@
   <header>
     <h1>체중 트래커</h1>
     <div class="header-right">
-      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 07:43:55</span>
+      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 09:30:03</span>
       <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
       <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
     </div>
@@ -137,7 +141,9 @@
         초기화
       </button>
     </div>
-    <div id="chart"></div>
+    <div class="chart-container">
+      <canvas id="chart"></canvas>
+    </div>
   </div>
 
   <!-- 데이터 목록 -->
@@ -317,14 +323,13 @@ const RAW_DATA = [
    앱 상태
 ──────────────────────────────────── */
 let allData  = [...RAW_DATA].sort((a,b) => a.date.localeCompare(b.date));
-let mode     = 'recent40';          // 현재 탭
-let showLabels = false;       // 꼭지점 숫자 on/off
-let chart, lineSeries, markerSeries;
+let mode     = 'recent40';
+let showLabels = false;
+let chart = null;
 
 /* ────────────────────────────────────
    날짜 유틸
 ──────────────────────────────────── */
-const toTs   = d => Math.floor(new Date(d).getTime() / 1000);
 const fmtDate = d => { const [y,m,dd] = d.split('-'); return `${m}/${dd}`; };
 const DAYS = ['일','월','화','수','목','금','토'];
 const fmtFull = d => {
@@ -332,85 +337,215 @@ const fmtFull = d => {
   const dow = DAYS[new Date(`${y}-${m}-${dd}T00:00:00`).getDay()];
   return `${y}.${m}.${dd} (${dow})`;
 };
-const avg     = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
+const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
+
+/* ────────────────────────────────────
+   테마 색상
+──────────────────────────────────── */
+let isLight = false;
+const THEME = {
+  dark:  { bg: '#16161a', text: '#8888aa', grid: 'rgba(42,42,53,0.6)', border: '#2a2a35', line: '#00e5a0' },
+  light: { bg: '#ffffff', text: '#555570', grid: 'rgba(209,209,216,0.6)', border: '#d1d1d8', line: '#00b87a' },
+};
+function getTheme() { return isLight ? THEME.light : THEME.dark; }
+
+/* ────────────────────────────────────
+   Chart.js 전역 설정
+──────────────────────────────────── */
+Chart.register(ChartDataLabels);
+Chart.defaults.font.family = "'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif";
 
 /* ────────────────────────────────────
    차트 초기화
 ──────────────────────────────────── */
 function initChart() {
-  const el = document.getElementById('chart');
-  chart = LightweightCharts.createChart(el, {
-    width:  el.clientWidth,
-    height: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--chart-h')),
-    layout: { background:{color:'#16161a'}, textColor:'#8888aa' },
-    grid: {
-      vertLines: { color:'rgba(42,42,53,0.6)' },
-      horzLines: { color:'rgba(42,42,53,0.6)' },
-    },
-    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-    rightPriceScale: {
-      borderColor: '#2a2a35',
-      scaleMargins: { top: 0.15, bottom: 0.15 },
-    },
-    timeScale: {
-      borderColor: '#2a2a35',
-      timeVisible: true,
-      secondsVisible: false,
-    },
-    handleScroll:  { mouseWheel:true, pressedMouseMove:true, horzTouchDrag:true, vertTouchDrag:false },
-    handleScale:   { axisPressedMouseMove:true, mouseWheel:true, pinch:true },
-  });
+  const ctx = document.getElementById('chart').getContext('2d');
+  const t = getTheme();
 
-  /* 선 시리즈 */
-  lineSeries = chart.addSeries(LightweightCharts.LineSeries, {
-    color: '#00e5a0',
-    lineWidth: 2,
-    crosshairMarkerVisible: true,
-    crosshairMarkerRadius: 5,
-    crosshairMarkerBorderColor: '#00e5a0',
-    crosshairMarkerBackgroundColor: '#0d0d0f',
-    pointMarkersVisible: false,
-    lastValueVisible: true,
-    priceLineVisible: true,
-    priceLineColor: 'rgba(0,229,160,0.3)',
-    priceLineWidth: 1,
-    priceLineStyle: LightweightCharts.LineStyle.Dashed,
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      datasets: [{
+        data: [],
+        borderColor: t.line,
+        borderWidth: 2,
+        backgroundColor: 'rgba(0,229,160,0.08)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        pointHitRadius: 10,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: t.line,
+        pointHoverBorderColor: t.line,
+        pointHoverBorderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 300 },
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
+      layout: {
+        padding: { top: 20, bottom: 5, left: 5, right: 10 }
+      },
+      scales: {
+        x: {
+          type: 'time',
+          time: {
+            unit: 'day',
+            displayFormats: { day: 'M/dd', week: 'M/dd', month: 'yyyy/MM' },
+            tooltipFormat: 'yyyy.MM.dd',
+          },
+          grid: { color: t.grid, drawBorder: false },
+          ticks: { color: t.text, font: { size: 10 }, maxTicksLimit: 8 },
+          border: { color: t.border },
+        },
+        y: {
+          grid: { color: t.grid, drawBorder: false },
+          ticks: {
+            color: t.text,
+            font: { size: 10 },
+            callback: v => v.toFixed(0) + 'kg',
+          },
+          border: { color: t.border },
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(13,13,15,0.9)',
+          titleColor: '#8888aa',
+          bodyColor: '#e8e8f0',
+          bodyFont: { size: 14, weight: 'bold' },
+          borderColor: 'rgba(42,42,53,0.8)',
+          borderWidth: 1,
+          cornerRadius: 8,
+          padding: 10,
+          displayColors: false,
+          callbacks: {
+            title: items => {
+              if (!items.length) return '';
+              const d = new Date(items[0].parsed.x);
+              const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+              const dow = DAYS[d.getDay()];
+              return `${y}.${m}.${dd} (${dow})`;
+            },
+            label: item => item.parsed.y.toFixed(1) + ' kg',
+          }
+        },
+        datalabels: {
+          display: false,
+        },
+        zoom: {
+          pan: {
+            enabled: true,
+            mode: 'x',
+            modifierKey: null,
+          },
+          zoom: {
+            wheel: { enabled: true },
+            pinch: { enabled: true },
+            mode: 'x',
+          },
+          limits: {
+            x: { minRange: 7 * 24 * 3600 * 1000 },
+          }
+        }
+      }
+    },
+    plugins: [minMaxLabelPlugin]
   });
-
-  /* 반응형 리사이즈 */
-  new ResizeObserver(() => {
-    chart.applyOptions({ width: el.clientWidth });
-  }).observe(el);
 }
+
+/* ────────────────────────────────────
+   최소/최대 커스텀 플러그인
+──────────────────────────────────── */
+const minMaxLabelPlugin = {
+  id: 'minMaxLabel',
+  afterDatasetsDraw(chart) {
+    const dataset = chart.data.datasets[0];
+    if (!dataset || !dataset.data.length) return;
+    const meta = chart.getDatasetMeta(0);
+    const ctx = chart.ctx;
+    const data = dataset.data;
+    const vals = data.map(d => d.y);
+    const minVal = Math.min(...vals);
+    const maxVal = Math.max(...vals);
+
+    if (showLabels) {
+      // 모든 포인트에 라벨 표시
+      meta.data.forEach((pt, i) => {
+        if (!pt) return;
+        const x = pt.x, y = pt.y;
+        ctx.save();
+        ctx.font = 'bold 9px sans-serif';
+        ctx.fillStyle = 'rgba(0,229,160,0.85)';
+        ctx.textAlign = 'center';
+        ctx.fillText(data[i].y.toFixed(1), x, y - 8);
+        ctx.restore();
+      });
+    } else {
+      // 최소/최대만 표시
+      const minIdx = vals.lastIndexOf(minVal);
+      const maxIdx = vals.lastIndexOf(maxVal);
+
+      [{ idx: minIdx, color: '#00e5a0', dir: 1 }, { idx: maxIdx, color: '#ff4d6d', dir: -1 }].forEach(({ idx, color, dir }) => {
+        const pt = meta.data[idx];
+        if (!pt) return;
+        const x = pt.x, y = pt.y;
+        const label = data[idx].y.toFixed(1);
+
+        ctx.save();
+        // 삼각형 마커
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(x, y + dir * 6);
+        ctx.lineTo(x - 4, y + dir * 12);
+        ctx.lineTo(x + 4, y + dir * 12);
+        ctx.closePath();
+        ctx.fill();
+
+        // 라벨
+        ctx.font = 'bold 10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = color;
+        ctx.fillText(label, x, y + dir * 24);
+        ctx.restore();
+      });
+    }
+  }
+};
 
 /* ────────────────────────────────────
    데이터 집계 & 차트 업데이트
 ──────────────────────────────────── */
 function getChartData() {
   if (mode === 'recent40') {
-    return allData.slice(-40).map(d => ({ time: d.date, value: d.w, label: d.w.toFixed(1) }));
+    return allData.slice(-40).map(d => ({ x: d.date, y: d.w }));
   }
   if (mode === 'thisyear') {
     const year = new Date().getFullYear().toString();
-    return allData.filter(d => d.date.startsWith(year)).map(d => ({ time: d.date, value: d.w, label: d.w.toFixed(1) }));
+    return allData.filter(d => d.date.startsWith(year)).map(d => ({ x: d.date, y: d.w }));
   }
   if (mode === 'all') {
-    return allData.map(d => ({ time: d.date, value: d.w, label: d.w.toFixed(1) }));
+    return allData.map(d => ({ x: d.date, y: d.w }));
   }
   if (mode === 'weekly') {
-    // 월요일 시작 기준 주간 평균
     const map = {};
     allData.forEach(d => {
       const dt = new Date(d.date);
-      const day = dt.getDay(); // 0=일, 1=월, ..., 6=토
-      const diff = (day === 0) ? -6 : 1 - day; // 월요일까지의 offset
+      const day = dt.getDay();
+      const diff = (day === 0) ? -6 : 1 - day;
       const mon = new Date(dt); mon.setDate(dt.getDate() + diff);
       const key = mon.toISOString().slice(0,10);
       if (!map[key]) map[key] = [];
       map[key].push(d.w);
     });
     return Object.entries(map).sort().map(([k,arr]) => ({
-      time: k, value: +avg(arr).toFixed(2), label: avg(arr).toFixed(1)
+      x: k, y: +avg(arr).toFixed(2)
     }));
   }
   if (mode === 'monthly') {
@@ -421,7 +556,7 @@ function getChartData() {
       map[key].push(d.w);
     });
     return Object.entries(map).sort().map(([k,arr]) => ({
-      time: k, value: +avg(arr).toFixed(2), label: avg(arr).toFixed(1)
+      x: k, y: +avg(arr).toFixed(2)
     }));
   }
   return [];
@@ -431,52 +566,34 @@ function updateChart() {
   const pts = getChartData();
   if (!pts.length) return;
 
-  /* 선 데이터 */
-  lineSeries.setData(pts.map(p => ({ time: p.time, value: p.value })));
+  /* 데이터 업데이트 */
+  chart.data.datasets[0].data = pts;
 
-  /* 최소/최대 계산 */
-  const vals = pts.map(p => p.value);
+  /* 시간 축 단위 자동 설정 */
+  const timeOpts = chart.options.scales.x.time;
+  if (mode === 'monthly') {
+    timeOpts.unit = 'month';
+  } else if (mode === 'all' || mode === 'weekly') {
+    timeOpts.unit = 'month';
+  } else {
+    timeOpts.unit = 'day';
+  }
+
+  /* 줌 리셋 & 리렌더 */
+  chart.resetZoom();
+  chart.update();
+
+  /* 요약 통계 */
+  const vals = pts.map(p => p.y);
   const minVal = Math.min(...vals);
   const maxVal = Math.max(...vals);
-  // 동일 값이 여러 개면 마지막 날짜
-  const minPt = pts.filter(p => p.value === minVal).slice(-1)[0];
-  const maxPt = pts.filter(p => p.value === maxVal).slice(-1)[0];
+  const minPt = pts.filter(p => p.y === minVal).slice(-1)[0];
+  const maxPt = pts.filter(p => p.y === maxVal).slice(-1)[0];
 
-  /* 꼭지점 마커 (숫자 표시) */
-  if (window._markersSeries) {
-    window._markersSeries.detach();
-    window._markersSeries = null;
-  }
-  if (showLabels) {
-    // 전체 꼭지점 표시
-    const markers = pts.map(p => ({
-      time: p.time,
-      position: 'aboveBar',
-      color: 'rgba(0,229,160,0.85)',
-      shape: 'circle',
-      text: p.label,
-      size: 0,
-    }));
-    window._markersSeries = LightweightCharts.createSeriesMarkers(lineSeries, markers);
-  } else {
-    // 기본: 최소/최대값만 표시
-    const markers = [
-      { time: minPt.time, position: 'belowBar', color: '#00e5a0', shape: 'arrowUp',   text: minPt.label, size: 1 },
-      { time: maxPt.time, position: 'aboveBar', color: '#ff4d6d', shape: 'arrowDown', text: maxPt.label, size: 1 },
-    ].sort((a, b) => a.time.localeCompare(b.time));
-    window._markersSeries = LightweightCharts.createSeriesMarkers(lineSeries, markers);
-  }
-
-  /* 요약 */
-  const minDate = minPt.time;
-  const maxDate = maxPt.time;
   const fmtStat = d => { const [y,m,dd] = d.split('-'); return `${y}.${m}.${dd}`; };
   document.getElementById('s-avg').innerHTML = avg(vals).toFixed(1)+'<span class="stat-unit">kg</span>';
-  document.getElementById('s-min').innerHTML = minVal.toFixed(1)+'<span class="stat-unit">kg</span><span class="stat-date">'+fmtStat(minDate)+'</span>';
-  document.getElementById('s-max').innerHTML = maxVal.toFixed(1)+'<span class="stat-unit">kg</span><span class="stat-date">'+fmtStat(maxDate)+'</span>';
-
-  /* 전체 범위 표시 */
-  chart.timeScale().fitContent();
+  document.getElementById('s-min').innerHTML = minVal.toFixed(1)+'<span class="stat-unit">kg</span><span class="stat-date">'+fmtStat(minPt.x)+'</span>';
+  document.getElementById('s-max').innerHTML = maxVal.toFixed(1)+'<span class="stat-unit">kg</span><span class="stat-date">'+fmtStat(maxPt.x)+'</span>';
 
   /* 리스트 */
   renderList(pts);
@@ -495,19 +612,19 @@ function renderList(pts) {
     const prev = rev[i+1];
     let diffHtml = '<span class="list-diff diff-same">–</span>';
     if (prev) {
-      const d = (p.value - prev.value).toFixed(1);
+      const d = (p.y - prev.y).toFixed(1);
       if (d > 0) diffHtml = `<span class="list-diff diff-up">▲${d}</span>`;
       else if (d < 0) diffHtml = `<span class="list-diff diff-down">▼${Math.abs(d)}</span>`;
       else diffHtml = '<span class="list-diff diff-same">→0.0</span>';
     }
     const dateLabel = mode === 'monthly'
-      ? p.time.slice(0,7).replace('-','년 ')+'월'
+      ? p.x.slice(0,7).replace('-','년 ')+'월'
       : mode === 'weekly'
-        ? `${fmtFull(p.time).replace(/ \(월\)/, '')} 주`
-        : fmtFull(p.time);
+        ? `${fmtFull(p.x).replace(/ \(월\)/, '')} 주`
+        : fmtFull(p.x);
     return `<div class="list-item">
       <span class="list-date">${dateLabel}</span>
-      <span class="list-weight">${p.value.toFixed(1)}<small style="font-size:11px;color:var(--text2);margin-left:2px">kg</small></span>
+      <span class="list-weight">${p.y.toFixed(1)}<small style="font-size:11px;color:var(--text2);margin-left:2px">kg</small></span>
       ${diffHtml}
     </div>`;
   }).join('');
@@ -531,20 +648,15 @@ document.querySelectorAll('.tab').forEach(btn => {
 function toggleLabels() {
   showLabels = !showLabels;
   document.getElementById('btn-label').classList.toggle('active', showLabels);
-  updateChart();
+  chart.update();
 }
 
 /* ────────────────────────────────────
    줌 초기화
 ──────────────────────────────────── */
 function resetZoom() {
-  chart.timeScale().fitContent();
+  chart.resetZoom();
 }
-
-/* ────────────────────────────────────
-   크로스헤어 이동 시 하단 하이라이트
-──────────────────────────────────── */
-// (심플하게 툴팁은 LightweightCharts 내장 사용)
 
 /* ────────────────────────────────────
    날짜 뱃지
@@ -559,21 +671,25 @@ function updateBadge() {
 /* ────────────────────────────────────
    다크/라이트 테마 토글
 ──────────────────────────────────── */
-let isLight = false;
-const CHART_DARK  = { bg: '#16161a', text: '#8888aa', grid: 'rgba(42,42,53,0.6)', border: '#2a2a35' };
-const CHART_LIGHT = { bg: '#ffffff', text: '#555570', grid: 'rgba(209,209,216,0.6)', border: '#d1d1d8' };
-
 function toggleTheme() {
   isLight = !isLight;
   document.body.classList.toggle('light', isLight);
   document.getElementById('btn-theme').textContent = isLight ? '☀️' : '🌙';
-  const c = isLight ? CHART_LIGHT : CHART_DARK;
-  chart.applyOptions({
-    layout: { background: { color: c.bg }, textColor: c.text },
-    grid: { vertLines: { color: c.grid }, horzLines: { color: c.grid } },
-    rightPriceScale: { borderColor: c.border },
-    timeScale: { borderColor: c.border },
-  });
+  const t = getTheme();
+  chart.options.scales.x.grid.color = t.grid;
+  chart.options.scales.x.ticks.color = t.text;
+  chart.options.scales.x.border.color = t.border;
+  chart.options.scales.y.grid.color = t.grid;
+  chart.options.scales.y.ticks.color = t.text;
+  chart.options.scales.y.border.color = t.border;
+  chart.data.datasets[0].borderColor = t.line;
+  chart.data.datasets[0].pointHoverBackgroundColor = t.line;
+  chart.data.datasets[0].pointHoverBorderColor = t.line;
+  chart.options.plugins.tooltip.backgroundColor = isLight ? 'rgba(255,255,255,0.95)' : 'rgba(13,13,15,0.9)';
+  chart.options.plugins.tooltip.titleColor = isLight ? '#555570' : '#8888aa';
+  chart.options.plugins.tooltip.bodyColor = isLight ? '#1a1a2e' : '#e8e8f0';
+  chart.options.plugins.tooltip.borderColor = isLight ? 'rgba(209,209,216,0.8)' : 'rgba(42,42,53,0.8)';
+  chart.update();
 }
 
 /* ────────────────────────────────────
