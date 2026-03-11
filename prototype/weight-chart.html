@@ -100,7 +100,7 @@
   <header>
     <h1>체중 트래커</h1>
     <div class="header-right">
-      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 23:13:55 KST</span>
+      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 23:23:07 KST</span>
       <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
       <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
     </div>
@@ -411,7 +411,7 @@ function initChart() {
           type: 'time',
           time: {
             unit: 'day',
-            displayFormats: { day: 'M/dd', week: 'M/dd', month: 'yyyy/MM' },
+            displayFormats: { day: 'yy/MM/dd', week: 'yy/MM/dd', month: 'yyyy/MM' },
             tooltipFormat: 'yyyy.MM.dd',
           },
           grid: { color: t.grid, drawBorder: false },
