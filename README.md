@@ -288,6 +288,8 @@ Lightweight Charts는 금융 차트용이라 체중 데이터에 불필요한 �
   - `prototype/weight-chart.html` 내 Chart.js 설정 중 `pointRadius`를 0에서 3으로 변경.
   - 마우스 오버 시 마커 크기(`pointHoverRadius`)를 적절히 조정.
 - **예상 결과**: 각 데이터 포인트의 위치가 명확하게 표시되어 데이터 확인이 용이해짐.
+- **커밋 해시**: `3806bc36925186b05b2d2eb38190a047f1c62d3b`
+
 
 
 
