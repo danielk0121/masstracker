@@ -24,6 +24,15 @@
     --chart-h:   240px;
     --radius:    12px;
   }
+  body.light {
+    --bg:        #f5f5f7;
+    --surface:   #ffffff;
+    --surface2:  #ebebf0;
+    --border:    #d1d1d8;
+    --text:      #1a1a2e;
+    --text2:     #555570;
+    --text3:     #9999b0;
+  }
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; overflow-x: hidden; }
 
@@ -70,6 +79,9 @@
   .diff-down { color: var(--accent); background: rgba(0,229,160,.1); }
   .diff-same { color: var(--text3); background: var(--surface2); }
 
+  /* ── 테마 토글 버튼 ── */
+  #btn-theme { background: none; border: none; cursor: pointer; font-size: 18px; line-height: 1; padding: 2px; }
+
   /* ── 스크롤바 ── */
   ::-webkit-scrollbar { width: 3px; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
@@ -82,7 +94,8 @@
   <header>
     <h1>체중 트래커</h1>
     <div class="header-right">
-      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 15:42:49</span>
+      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 15:47:35</span>
+      <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
       <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
     </div>
   </header>
@@ -529,6 +542,26 @@ function updateBadge() {
   const days = ['일','월','화','수','목','금','토'];
   document.getElementById('today-badge').textContent =
     `${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+}
+
+/* ────────────────────────────────────
+   다크/라이트 테마 토글
+──────────────────────────────────── */
+let isLight = false;
+const CHART_DARK  = { bg: '#16161a', text: '#8888aa', grid: 'rgba(42,42,53,0.6)', border: '#2a2a35' };
+const CHART_LIGHT = { bg: '#ffffff', text: '#555570', grid: 'rgba(209,209,216,0.6)', border: '#d1d1d8' };
+
+function toggleTheme() {
+  isLight = !isLight;
+  document.body.classList.toggle('light', isLight);
+  document.getElementById('btn-theme').textContent = isLight ? '☀️' : '🌙';
+  const c = isLight ? CHART_LIGHT : CHART_DARK;
+  chart.applyOptions({
+    layout: { background: { color: c.bg }, textColor: c.text },
+    grid: { vertLines: { color: c.grid }, horzLines: { color: c.grid } },
+    rightPriceScale: { borderColor: c.border },
+    timeScale: { borderColor: c.border },
+  });
 }
 
 /* ────────────────────────────────────
