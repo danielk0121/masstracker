@@ -434,12 +434,21 @@ function updateChart() {
   /* 선 데이터 */
   lineSeries.setData(pts.map(p => ({ time: p.time, value: p.value })));
 
+  /* 최소/최대 계산 */
+  const vals = pts.map(p => p.value);
+  const minVal = Math.min(...vals);
+  const maxVal = Math.max(...vals);
+  // 동일 값이 여러 개면 마지막 날짜
+  const minPt = pts.filter(p => p.value === minVal).slice(-1)[0];
+  const maxPt = pts.filter(p => p.value === maxVal).slice(-1)[0];
+
   /* 꼭지점 마커 (숫자 표시) */
   if (window._markersSeries) {
     window._markersSeries.detach();
     window._markersSeries = null;
   }
   if (showLabels) {
+    // 전체 꼭지점 표시
     const markers = pts.map(p => ({
       time: p.time,
       position: 'aboveBar',
@@ -449,15 +458,18 @@ function updateChart() {
       size: 0,
     }));
     window._markersSeries = LightweightCharts.createSeriesMarkers(lineSeries, markers);
+  } else {
+    // 기본: 최소/최대값만 표시
+    const markers = [
+      { time: minPt.time, position: 'belowBar', color: '#00e5a0', shape: 'arrowUp',   text: minPt.label, size: 1 },
+      { time: maxPt.time, position: 'aboveBar', color: '#ff4d6d', shape: 'arrowDown', text: maxPt.label, size: 1 },
+    ].sort((a, b) => a.time.localeCompare(b.time));
+    window._markersSeries = LightweightCharts.createSeriesMarkers(lineSeries, markers);
   }
 
   /* 요약 */
-  const vals = pts.map(p => p.value);
-  const minVal = Math.min(...vals);
-  const maxVal = Math.max(...vals);
-  // 동일 값이 여러 개면 마지막 날짜
-  const minDate = pts.filter(p => p.value === minVal).slice(-1)[0].time;
-  const maxDate = pts.filter(p => p.value === maxVal).slice(-1)[0].time;
+  const minDate = minPt.time;
+  const maxDate = maxPt.time;
   const fmtStat = d => { const [y,m,dd] = d.split('-'); return `${y}.${m}.${dd}`; };
   document.getElementById('s-avg').innerHTML = avg(vals).toFixed(1)+'<span class="stat-unit">kg</span>';
   document.getElementById('s-min').innerHTML = minVal.toFixed(1)+'<span class="stat-unit">kg</span><span class="stat-date">'+fmtStat(minDate)+'</span>';
