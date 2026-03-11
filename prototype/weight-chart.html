@@ -100,7 +100,7 @@
   <header>
     <h1>체중 트래커</h1>
     <div class="header-right">
-      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 22:59:15 KST</span>
+      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 23:13:55 KST</span>
       <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
       <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
     </div>
@@ -360,7 +360,7 @@ const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
 let isLight = false;
 const THEME = {
   dark:  { bg: '#16161a', text: '#8888aa', grid: 'rgba(42,42,53,0.6)', border: '#2a2a35', line: '#00e5a0' },
-  light: { bg: '#ffffff', text: '#555570', grid: 'rgba(209,209,216,0.6)', border: '#d1d1d8', line: '#1a1a2e' },
+  light: { bg: '#ffffff', text: '#555570', grid: 'rgba(209,209,216,0.6)', border: '#d1d1d8', line: '#444455' },
 };
 function getTheme() { return isLight ? THEME.light : THEME.dark; }
 
