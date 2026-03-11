@@ -182,6 +182,21 @@ cd masstracker
 
 ---
 
+## 📋 개발 규칙
+
+### 프로토타입 파일 수정 시
+
+`prototype/weight-chart.html`을 수정할 때마다 헤더의 **마지막 수정 날짜를 반드시 갱신**한다.
+
+```html
+<!-- 헤더 내 날짜 문자열 — 항상 실제 수정 일시로 업데이트 -->
+<span style="font-size:11px;color:var(--text3);">수정 YYYY-MM-DD HH:MM:SS</span>
+```
+
+현재 날짜·시각은 `date '+%Y-%m-%d %H:%M:%S'` 명령으로 확인한다.
+
+---
+
 ## TODO
 
 - 차트 유용성 재검토 : 기간 설정과 차트에 한번에 보여지는 데이터가 유용한 차트 데이터인지 재검토
