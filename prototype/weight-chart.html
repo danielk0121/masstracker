@@ -63,7 +63,7 @@
 
   /* ── 차트 영역 ── */
   .chart-wrap { padding: 12px 16px 0; position: relative; }
-  .chart-container { width: 100%; height: var(--chart-h); border-radius: var(--radius); overflow: hidden; background: var(--surface); border: 1px solid var(--border); position: relative; touch-action: pan-y; cursor: grab; }
+  .chart-container { width: 100%; height: var(--chart-h); border-radius: var(--radius); overflow: hidden; background: var(--surface); border: 1px solid var(--border); position: relative; touch-action: none; cursor: grab; }
   .chart-container:active { cursor: grabbing; }
   .chart-container canvas { width: 100% !important; height: 100% !important; cursor: inherit; }
 
@@ -99,7 +99,7 @@
   <header>
     <h1>체중 트래커</h1>
     <div class="header-right">
-      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 10:26:42</span>
+      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 11:33:12</span>
       <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
       <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
     </div>
@@ -480,15 +480,26 @@ const minMaxLabelPlugin = {
     const meta = chart.getDatasetMeta(0);
     const ctx = chart.ctx;
     const data = dataset.data;
-    const vals = data.map(d => d.y);
-    const minVal = Math.min(...vals);
-    const maxVal = Math.max(...vals);
+    const chartArea = chart.chartArea;
+
+    /* 현재 보이는 범위의 데이터만 필터링 */
+    const xScale = chart.scales.x;
+    const visibleMin = xScale.min;
+    const visibleMax = xScale.max;
+    const visibleIndices = [];
+    data.forEach((d, i) => {
+      const t = new Date(d.x).getTime();
+      if (t >= visibleMin && t <= visibleMax) visibleIndices.push(i);
+    });
+    if (visibleIndices.length === 0) return;
 
     if (showLabels) {
-      // 모든 포인트에 라벨 표시
-      meta.data.forEach((pt, i) => {
+      // 보이는 범위의 모든 포인트에 라벨 표시
+      visibleIndices.forEach(i => {
+        const pt = meta.data[i];
         if (!pt) return;
         const x = pt.x, y = pt.y;
+        if (x < chartArea.left || x > chartArea.right) return;
         ctx.save();
         ctx.font = 'bold 9px sans-serif';
         ctx.fillStyle = 'rgba(0,229,160,0.85)';
@@ -497,14 +508,18 @@ const minMaxLabelPlugin = {
         ctx.restore();
       });
     } else {
-      // 최소/최대만 표시
-      const minIdx = vals.lastIndexOf(minVal);
-      const maxIdx = vals.lastIndexOf(maxVal);
+      // 보이는 범위에서 최소/최대만 표시
+      let minIdx = visibleIndices[0], maxIdx = visibleIndices[0];
+      visibleIndices.forEach(i => {
+        if (data[i].y < data[minIdx].y) minIdx = i;
+        if (data[i].y > data[maxIdx].y) maxIdx = i;
+      });
 
       [{ idx: minIdx, color: '#00e5a0', dir: 1 }, { idx: maxIdx, color: '#ff4d6d', dir: -1 }].forEach(({ idx, color, dir }) => {
         const pt = meta.data[idx];
         if (!pt) return;
         const x = pt.x, y = pt.y;
+        if (x < chartArea.left || x > chartArea.right) return;
         const label = data[idx].y.toFixed(1);
 
         ctx.save();
