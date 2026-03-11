@@ -18,7 +18,7 @@
     --text:      #e8e8f0;
     --text2:     #8888aa;
     --text3:     #55556a;
-    --chart-h:   340px;
+    --chart-h:   240px;
     --radius:    12px;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -48,7 +48,7 @@
 
   /* ── 차트 영역 ── */
   .chart-wrap { flex: 1; padding: 12px 16px 0; position: relative; min-height: var(--chart-h); }
-  #chart { width: 100%; height: var(--chart-h); border-radius: var(--radius); overflow: hidden; background: var(--surface); border: 1px solid var(--border); }
+  #chart { width: 100%; height: var(--chart-h); border-radius: var(--radius); overflow: hidden; background: var(--surface); border: 1px solid var(--border); touch-action: pan-x; }
 
   /* ── 차트 툴바 ── */
   .chart-toolbar { display: flex; justify-content: flex-end; align-items: center; gap: 6px; padding: 8px 0 4px; }
