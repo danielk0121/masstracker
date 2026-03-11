@@ -394,3 +394,4 @@ Lightweight Charts는 금융 차트용이라 체중 데이터에 불필요한 �
   - `prototype/weight-chart.html`의 `header`, `tab-bar`, `summary`, `goal-panel`, `chart-wrap`, `list-section`의 좌우 `padding` 값을 절반으로 축소.
   - 헤더 20px -> 10px, 기타 섹션 16px -> 8px.
 - **예상 결과**: 화면 양옆의 여백이 줄어들어 콘텐츠가 더 넓고 빽빽하게 표시됨.
+\n---\n- [x] 목표 체중 패널과 차트 툴바 사이의 공백(빨간 박스 영역)을 줄여서 화면 밀도 높이기
