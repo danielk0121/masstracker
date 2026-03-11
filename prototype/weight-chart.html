@@ -82,14 +82,14 @@
   <header>
     <h1>체중 트래커</h1>
     <div class="header-right">
-      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 15:40:28</span>
+      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 15:42:49</span>
       <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
     </div>
   </header>
 
   <!-- 탭 -->
   <div class="tab-bar">
-    <button class="tab" data-mode="recent15">최근15일</button>
+    <button class="tab" data-mode="recent40">최근40일</button>
     <button class="tab" data-mode="thisyear">올해</button>
     <button class="tab active" data-mode="all">전체보기</button>
     <button class="tab" data-mode="weekly">주간평균</button>
@@ -374,8 +374,8 @@ function initChart() {
    데이터 집계 & 차트 업데이트
 ──────────────────────────────────── */
 function getChartData() {
-  if (mode === 'recent15') {
-    return allData.slice(-15).map(d => ({ time: d.date, value: d.w, label: d.w.toFixed(1) }));
+  if (mode === 'recent40') {
+    return allData.slice(-40).map(d => ({ time: d.date, value: d.w, label: d.w.toFixed(1) }));
   }
   if (mode === 'thisyear') {
     const year = new Date().getFullYear().toString();
@@ -462,7 +462,7 @@ function updateChart() {
 ──────────────────────────────────── */
 function renderList(pts) {
   const rev = [...pts].reverse();
-  const titles = { recent15:'최근 15일', thisyear:`${new Date().getFullYear()}년 기록`, all:'전체 기록', weekly:'주간 평균 <span style="font-weight:400;color:var(--text3)">(월요일 기준)</span>', monthly:'월간 평균' };
+  const titles = { recent40:'최근 40일', thisyear:`${new Date().getFullYear()}년 기록`, all:'전체 기록', weekly:'주간 평균 <span style="font-weight:400;color:var(--text3)">(월요일 기준)</span>', monthly:'월간 평균' };
   document.getElementById('list-title').innerHTML = titles[mode];
 
   const el = document.getElementById('data-list');
