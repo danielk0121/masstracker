@@ -100,7 +100,7 @@
   <header>
     <h1>체중 트래커</h1>
     <div class="header-right">
-      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 23:29:35 KST</span>
+      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 23:34:01 KST</span>
       <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
       <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
     </div>
@@ -387,9 +387,9 @@ function initChart() {
         backgroundColor: 'rgba(0,229,160,0.08)',
         fill: true,
         tension: 0.3,
-        pointRadius: 3,
+        pointRadius: 1.5,
         pointHitRadius: 10,
-        pointHoverRadius: 5,
+        pointHoverRadius: 2.5,
         pointHoverBackgroundColor: t.line,
         pointHoverBorderColor: t.line,
         pointHoverBorderWidth: 2,
@@ -780,7 +780,7 @@ function toggleDots() {
   document.getElementById('btn-dot').classList.toggle('active', showDots);
   const t = getTheme();
   const ds = chart.data.datasets[0];
-  ds.pointRadius = showDots ? 4 : 0;
+  ds.pointRadius = showDots ? 2 : 0;
   ds.pointBackgroundColor = t.line;
   ds.pointBorderColor = t.line;
   ds.pointBorderWidth = 0;
