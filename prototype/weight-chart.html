@@ -63,8 +63,9 @@
 
   /* ── 차트 영역 ── */
   .chart-wrap { padding: 12px 16px 0; position: relative; }
-  .chart-container { width: 100%; height: var(--chart-h); border-radius: var(--radius); overflow: hidden; background: var(--surface); border: 1px solid var(--border); position: relative; }
-  .chart-container canvas { width: 100% !important; height: 100% !important; }
+  .chart-container { width: 100%; height: var(--chart-h); border-radius: var(--radius); overflow: hidden; background: var(--surface); border: 1px solid var(--border); position: relative; touch-action: pan-y; cursor: grab; }
+  .chart-container:active { cursor: grabbing; }
+  .chart-container canvas { width: 100% !important; height: 100% !important; cursor: inherit; }
 
   /* ── 차트 툴바 ── */
   .chart-toolbar { display: flex; justify-content: flex-end; align-items: center; gap: 6px; padding: 8px 0 4px; }
@@ -98,7 +99,7 @@
   <header>
     <h1>체중 트래커</h1>
     <div class="header-right">
-      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 09:30:03</span>
+      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 10:26:42</span>
       <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
       <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
     </div>
@@ -444,11 +445,19 @@ function initChart() {
             enabled: true,
             mode: 'x',
             modifierKey: null,
+            onPanComplete({ chart }) {
+              const { min, max } = chart.scales.x;
+              syncListToRange(min, max);
+            },
           },
           zoom: {
             wheel: { enabled: true },
             pinch: { enabled: true },
             mode: 'x',
+            onZoomComplete({ chart }) {
+              const { min, max } = chart.scales.x;
+              syncListToRange(min, max);
+            },
           },
           limits: {
             x: { minRange: 7 * 24 * 3600 * 1000 },
@@ -520,19 +529,9 @@ const minMaxLabelPlugin = {
 };
 
 /* ────────────────────────────────────
-   데이터 집계 & 차트 업데이트
+   전체 차트 데이터 빌드 (항상 전 기간 로드)
 ──────────────────────────────────── */
-function getChartData() {
-  if (mode === 'recent40') {
-    return allData.slice(-40).map(d => ({ x: d.date, y: d.w }));
-  }
-  if (mode === 'thisyear') {
-    const year = new Date().getFullYear().toString();
-    return allData.filter(d => d.date.startsWith(year)).map(d => ({ x: d.date, y: d.w }));
-  }
-  if (mode === 'all') {
-    return allData.map(d => ({ x: d.date, y: d.w }));
-  }
+function buildAllChartData() {
   if (mode === 'weekly') {
     const map = {};
     allData.forEach(d => {
@@ -544,9 +543,7 @@ function getChartData() {
       if (!map[key]) map[key] = [];
       map[key].push(d.w);
     });
-    return Object.entries(map).sort().map(([k,arr]) => ({
-      x: k, y: +avg(arr).toFixed(2)
-    }));
+    return Object.entries(map).sort().map(([k,arr]) => ({ x: k, y: +avg(arr).toFixed(2) }));
   }
   if (mode === 'monthly') {
     const map = {};
@@ -555,21 +552,84 @@ function getChartData() {
       if (!map[key]) map[key] = [];
       map[key].push(d.w);
     });
-    return Object.entries(map).sort().map(([k,arr]) => ({
-      x: k, y: +avg(arr).toFixed(2)
-    }));
+    return Object.entries(map).sort().map(([k,arr]) => ({ x: k, y: +avg(arr).toFixed(2) }));
   }
-  return [];
+  /* recent40 / thisyear / all — 전체 일별 데이터 로드 (패닝으로 탐색) */
+  return allData.map(d => ({ x: d.date, y: d.w }));
 }
 
+/* ────────────────────────────────────
+   탭별 초기 표시 윈도우 계산
+──────────────────────────────────── */
+function getInitialWindow(allPts) {
+  if (!allPts.length) return {};
+  const lastTs  = new Date(allPts[allPts.length - 1].x).getTime();
+  const firstTs = new Date(allPts[0].x).getTime();
+
+  if (mode === 'recent40') {
+    /* 마지막 40개 데이터 포인트의 날짜 범위 */
+    const recent = allPts.slice(-40);
+    return { min: new Date(recent[0].x).getTime() - 86400000, max: lastTs + 86400000 };
+  }
+  if (mode === 'thisyear') {
+    const yearStart = new Date(new Date().getFullYear(), 0, 1).getTime();
+    return { min: yearStart, max: lastTs + 86400000 };
+  }
+  if (mode === 'weekly') {
+    /* 최근 16주 */
+    return { min: lastTs - 16 * 7 * 86400000, max: lastTs + 7 * 86400000 };
+  }
+  if (mode === 'monthly') {
+    /* 최근 12개월 */
+    const d = new Date(lastTs);
+    return { min: new Date(d.getFullYear() - 1, d.getMonth(), 1).getTime(), max: lastTs + 30 * 86400000 };
+  }
+  /* 'all': 전체 표시 */
+  return { min: firstTs, max: lastTs + 86400000 };
+}
+
+/* ────────────────────────────────────
+   현재 보이는 X 범위로 통계·목록 동기화
+──────────────────────────────────── */
+function syncListToRange(minMs, maxMs) {
+  const pts = chart.data.datasets[0].data;
+  const pad = 2 * 86400000;
+  const visible = pts.filter(p => {
+    const t = new Date(p.x).getTime();
+    return t >= minMs - pad && t <= maxMs + pad;
+  });
+  if (visible.length > 0) {
+    updateStats(visible);
+    renderList(visible);
+  }
+}
+
+/* ────────────────────────────────────
+   통계 카드 업데이트
+──────────────────────────────────── */
+function updateStats(pts) {
+  const vals  = pts.map(p => p.y);
+  const minVal = Math.min(...vals);
+  const maxVal = Math.max(...vals);
+  const minPt  = pts.filter(p => p.y === minVal).slice(-1)[0];
+  const maxPt  = pts.filter(p => p.y === maxVal).slice(-1)[0];
+  const fmtStat = d => { const [y,m,dd] = d.split('-'); return `${y}.${m}.${dd}`; };
+  document.getElementById('s-avg').innerHTML = avg(vals).toFixed(1)+'<span class="stat-unit">kg</span>';
+  document.getElementById('s-min').innerHTML = minVal.toFixed(1)+'<span class="stat-unit">kg</span><span class="stat-date">'+fmtStat(minPt.x)+'</span>';
+  document.getElementById('s-max').innerHTML = maxVal.toFixed(1)+'<span class="stat-unit">kg</span><span class="stat-date">'+fmtStat(maxPt.x)+'</span>';
+}
+
+/* ────────────────────────────────────
+   차트 업데이트
+──────────────────────────────────── */
 function updateChart() {
-  const pts = getChartData();
-  if (!pts.length) return;
+  const allPts = buildAllChartData();
+  if (!allPts.length) return;
 
-  /* 데이터 업데이트 */
-  chart.data.datasets[0].data = pts;
+  /* 전체 데이터 로드 (패닝으로 전 기간 탐색 가능) */
+  chart.data.datasets[0].data = allPts;
 
-  /* 시간 축 단위 자동 설정 */
+  /* 시간 축 단위 */
   const timeOpts = chart.options.scales.x.time;
   if (mode === 'monthly') {
     timeOpts.unit = 'month';
@@ -579,24 +639,28 @@ function updateChart() {
     timeOpts.unit = 'day';
   }
 
-  /* 줌 리셋 & 리렌더 */
-  chart.resetZoom();
-  chart.update();
+  /* 패닝 한계: 전체 데이터 범위 */
+  const firstTs = new Date(allPts[0].x).getTime();
+  const lastTs  = new Date(allPts[allPts.length - 1].x).getTime();
+  chart.options.plugins.zoom.limits.x.min = firstTs - 7 * 86400000;
+  chart.options.plugins.zoom.limits.x.max = lastTs  + 7 * 86400000;
 
-  /* 요약 통계 */
-  const vals = pts.map(p => p.y);
-  const minVal = Math.min(...vals);
-  const maxVal = Math.max(...vals);
-  const minPt = pts.filter(p => p.y === minVal).slice(-1)[0];
-  const maxPt = pts.filter(p => p.y === maxVal).slice(-1)[0];
+  /* 스케일 초기화 후 초기 윈도우 적용 */
+  delete chart.options.scales.x.min;
+  delete chart.options.scales.x.max;
+  chart.update('none');
 
-  const fmtStat = d => { const [y,m,dd] = d.split('-'); return `${y}.${m}.${dd}`; };
-  document.getElementById('s-avg').innerHTML = avg(vals).toFixed(1)+'<span class="stat-unit">kg</span>';
-  document.getElementById('s-min').innerHTML = minVal.toFixed(1)+'<span class="stat-unit">kg</span><span class="stat-date">'+fmtStat(minPt.x)+'</span>';
-  document.getElementById('s-max').innerHTML = maxVal.toFixed(1)+'<span class="stat-unit">kg</span><span class="stat-date">'+fmtStat(maxPt.x)+'</span>';
+  const win = getInitialWindow(allPts);
+  chart.zoomScale('x', { min: win.min, max: win.max }, 'none');
 
-  /* 리스트 */
-  renderList(pts);
+  /* 초기 윈도우 범위 데이터로 통계·목록 업데이트 */
+  const pad = 2 * 86400000;
+  const initVisible = allPts.filter(p => {
+    const t = new Date(p.x).getTime();
+    return t >= win.min - pad && t <= win.max + pad;
+  });
+  updateStats(initVisible.length ? initVisible : allPts);
+  renderList(initVisible.length ? initVisible : allPts);
 }
 
 /* ────────────────────────────────────
@@ -652,10 +716,26 @@ function toggleLabels() {
 }
 
 /* ────────────────────────────────────
-   줌 초기화
+   줌 초기화 (현재 탭의 기본 윈도우로 복귀)
 ──────────────────────────────────── */
 function resetZoom() {
-  chart.resetZoom();
+  const allPts = chart.data.datasets[0].data;
+  if (!allPts.length) return;
+
+  delete chart.options.scales.x.min;
+  delete chart.options.scales.x.max;
+  chart.update('none');
+
+  const win = getInitialWindow(allPts);
+  chart.zoomScale('x', { min: win.min, max: win.max }, 'none');
+
+  const pad = 2 * 86400000;
+  const visible = allPts.filter(p => {
+    const t = new Date(p.x).getTime();
+    return t >= win.min - pad && t <= win.max + pad;
+  });
+  updateStats(visible.length ? visible : allPts);
+  renderList(visible.length ? visible : allPts);
 }
 
 /* ────────────────────────────────────
