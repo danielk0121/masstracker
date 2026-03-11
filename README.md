@@ -229,7 +229,7 @@ TradingView(Lightweight Charts)에서 Chart.js로 전환하면서 아래 3가지
 
 ---
 
-## TODO
+## TODO (완료!)
 
 - 차트 유용성 재검토 : 기간 설정과 차트에 한번에 보여지는 데이터가 유용한 차트 데이터인지 재검토
 - 차트 꼭지점 데이터 재검토 : 차트 꼭지점에 너무 많은 숫자가 표시되면 차트를 가리는 문제
@@ -238,7 +238,7 @@ TradingView(Lightweight Charts)에서 Chart.js로 전환하면서 아래 3가지
 
 ---
 
-## TODO 분석
+## TODO 분석 (완료!)
 
 ### 1. 차트 유용성 재검토
 
