@@ -161,7 +161,8 @@ Phase 4  [예정] 기능 고도화
 
 > 웹 프로토타입 (Phase 1)
 
-![prototype_screenshot.png](doc/prototype_screenshot.png)
+![img.png](doc/screenshot/img.png)
+![img_1.png](doc/screenshot/img_1.png)
 
 ---
 
