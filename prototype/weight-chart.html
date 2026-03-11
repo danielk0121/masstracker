@@ -27,6 +27,8 @@
     --text3:     #55556a;
     --chart-h:   240px;
     --radius:    12px;
+    --weekend-bg:     rgba(255,140,30,0.11);
+    --weekend-border: rgba(255,140,30,0.28);
   }
   body.light {
     --bg:        #f5f5f7;
@@ -36,6 +38,8 @@
     --text:      #1a1a2e;
     --text2:     #555570;
     --text3:     #9999b0;
+    --weekend-bg:     rgba(255,120,0,0.07);
+    --weekend-border: rgba(255,120,0,0.20);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; overflow-x: hidden; }
@@ -91,6 +95,7 @@
   .list-section { padding: 0 8px 20px; }
   .list-header { font-size: 12px; color: var(--text3); padding: 14px 0 8px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
   .list-item { display: flex; align-items: center; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 6px; }
+  .list-item.weekend { background: var(--weekend-bg); border-color: var(--weekend-border); }
   .list-date { flex: 1; font-size: 13px; color: var(--text2); }
   .list-weight { font-size: 17px; font-weight: 700; margin-right: 8px; }
   .list-diff { font-size: 12px; padding: 2px 7px; border-radius: 5px; font-weight: 600; }
@@ -113,7 +118,7 @@
   <header>
     <h1>체중 트래커</h1>
     <div class="header-right">
-      <span style="font-size:11px;color:var(--text3);">수정 2026-03-12 00:33:05 KST</span>
+      <span style="font-size:11px;color:var(--text3);">수정 2026-03-12 01:35:11 KST</span>
       <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
       <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
     </div>
@@ -871,7 +876,9 @@ function renderList(pts) {
       : mode === 'weekly'
         ? `${fmtFull(p.x).replace(/ \(월\)/, '')} 주`
         : fmtFull(p.x);
-    return `<div class="list-item">
+    const isWeekend = (mode !== 'weekly' && mode !== 'monthly') &&
+      (() => { const dow = new Date(p.x + 'T00:00:00').getDay(); return dow === 0 || dow === 6; })();
+    return `<div class="list-item${isWeekend ? ' weekend' : ''}">
       <span class="list-date">${dateLabel}</span>
       <span class="list-weight">${p.y.toFixed(1)}<small style="font-size:11px;color:var(--text2);margin-left:2px">kg</small></span>
       ${diffHtml}
