@@ -9,6 +9,7 @@
 <title>체중 트래커</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <style>
@@ -99,7 +100,7 @@
   <header>
     <h1>체중 트래커</h1>
     <div class="header-right">
-      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 20:41:20 KST</span>
+      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 21:38:39 KST</span>
       <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
       <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
     </div>
@@ -136,6 +137,14 @@
       <button class="toolbar-btn" id="btn-label" onclick="toggleLabels()">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="4"/><line x1="8" y1="12" x2="8" y2="15"/><line x1="1" y1="8" x2="4" y2="8"/><line x1="12" y1="8" x2="15" y2="8"/></svg>
         꼭지점
+      </button>
+      <button class="toolbar-btn" onclick="zoomIn()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6.5" cy="6.5" r="4.5"/><line x1="10.5" y1="10.5" x2="14" y2="14"/><line x1="4.5" y1="6.5" x2="8.5" y2="6.5"/><line x1="6.5" y1="4.5" x2="6.5" y2="8.5"/></svg>
+        확대
+      </button>
+      <button class="toolbar-btn" onclick="zoomOut()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6.5" cy="6.5" r="4.5"/><line x1="10.5" y1="10.5" x2="14" y2="14"/><line x1="4.5" y1="6.5" x2="8.5" y2="6.5"/></svg>
+        축소
       </button>
       <button class="toolbar-btn" onclick="resetZoom()">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg>
@@ -445,16 +454,17 @@ function initChart() {
             enabled: true,
             mode: 'x',
             modifierKey: null,
-            onPanComplete({ chart }) {
+            threshold: 5,
+            onPan({ chart }) {
               const { min, max } = chart.scales.x;
               syncListToRange(min, max);
             },
           },
           zoom: {
-            wheel: { enabled: true },
+            wheel: { enabled: true, speed: 0.08 },
             pinch: { enabled: true },
             mode: 'x',
-            onZoomComplete({ chart }) {
+            onZoom({ chart }) {
               const { min, max } = chart.scales.x;
               syncListToRange(min, max);
             },
@@ -614,10 +624,32 @@ function syncListToRange(minMs, maxMs) {
     return t >= minMs - pad && t <= maxMs + pad;
   });
   if (visible.length > 0) {
+    autoScaleY(visible);
     updateStats(visible);
     renderList(visible);
   }
 }
+
+/* ────────────────────────────────────
+   Y축 자동 스케일 (보이는 데이터 기준)
+──────────────────────────────────── */
+function autoScaleY(visible) {
+  if (!visible.length) return;
+  const vals = visible.map(p => p.y);
+  const minV = Math.min(...vals);
+  const maxV = Math.max(...vals);
+  const range = maxV - minV || 1;
+  const pad = Math.max(range * 0.25, 0.5);
+  chart.options.scales.y.min = Math.floor((minV - pad) * 2) / 2;
+  chart.options.scales.y.max = Math.ceil((maxV + pad) * 2) / 2;
+  chart.update('none');
+}
+
+/* ────────────────────────────────────
+   줌 인 / 줌 아웃 버튼
+──────────────────────────────────── */
+function zoomIn()  { chart.zoom(1.4); }
+function zoomOut() { chart.zoom(1 / 1.4); }
 
 /* ────────────────────────────────────
    통계 카드 업데이트
@@ -663,6 +695,8 @@ function updateChart() {
   /* 스케일 초기화 후 초기 윈도우 적용 */
   delete chart.options.scales.x.min;
   delete chart.options.scales.x.max;
+  delete chart.options.scales.y.min;
+  delete chart.options.scales.y.max;
   chart.update('none');
 
   const win = getInitialWindow(allPts);
@@ -674,8 +708,10 @@ function updateChart() {
     const t = new Date(p.x).getTime();
     return t >= win.min - pad && t <= win.max + pad;
   });
-  updateStats(initVisible.length ? initVisible : allPts);
-  renderList(initVisible.length ? initVisible : allPts);
+  const pts = initVisible.length ? initVisible : allPts;
+  autoScaleY(pts);
+  updateStats(pts);
+  renderList(pts);
 }
 
 /* ────────────────────────────────────
@@ -739,6 +775,8 @@ function resetZoom() {
 
   delete chart.options.scales.x.min;
   delete chart.options.scales.x.max;
+  delete chart.options.scales.y.min;
+  delete chart.options.scales.y.max;
   chart.update('none');
 
   const win = getInitialWindow(allPts);
@@ -749,8 +787,10 @@ function resetZoom() {
     const t = new Date(p.x).getTime();
     return t >= win.min - pad && t <= win.max + pad;
   });
-  updateStats(visible.length ? visible : allPts);
-  renderList(visible.length ? visible : allPts);
+  const pts = visible.length ? visible : allPts;
+  autoScaleY(pts);
+  updateStats(pts);
+  renderList(pts);
 }
 
 /* ────────────────────────────────────
