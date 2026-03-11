@@ -323,6 +323,15 @@ Lightweight Charts는 금융 차트용이라 체중 데이터에 불필요한 �
   - `prototype/weight-chart.html`의 `THEME.light.line` 색상을 `#1a1a2e`에서 좀 더 옅은 검은색(회색 톤)인 `#444455`로 변경.
 - **예상 결과**: 라이트 모드에서 차트가 이전보다 눈이 편안하고 부드러운 톤으로 표시됨.
 
+---
+
+### 작업 계획: 차트 X축 연도 표시 추가
+- **목적**: 데이터의 시점이 어느 연도인지 명확히 알 수 있도록 X축 날짜 포맷에 연도를 포함함.
+- **수정 내용**: 
+  - `prototype/weight-chart.html`의 Chart.js 설정 중 `scales.x.time.displayFormats.day` 값을 `'MM/dd'`에서 `'yy/MM/dd'`로 변경.
+- **예상 결과**: 차트 하단 날짜 표시에서 연도(yy)를 함께 확인할 수 있게 됨.
+
+
 
 
 
