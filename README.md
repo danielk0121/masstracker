@@ -193,15 +193,28 @@ cd masstracker
 `prototype/weight-chart.html`을 수정할 때마다 헤더의 **마지막 수정 날짜를 반드시 갱신**한다.
 
 ```html
-<!-- 헤더 내 날짜 문자열 — 항상 실제 수정 일시로 업데이트 -->
-<span style="font-size:11px;color:var(--text3);">수정 YYYY-MM-DD HH:MM:SS</span>
+<!-- 헤더 내 날짜 문자열 — 항상 실제 수정 일시(KST)로 업데이트 -->
+<span style="font-size:11px;color:var(--text3);">수정 YYYY-MM-DD HH:MM:SS KST</span>
 ```
 
-현재 날짜·시각은 `date '+%Y-%m-%d %H:%M:%S'` 명령으로 확인한다.
+현재 날짜·시각(KST)은 `TZ='Asia/Seoul' date '+%Y-%m-%d %H:%M:%S'` 명령으로 확인한다.
+
+> 시스템 시간이 UTC 기준이므로, 반드시 `TZ='Asia/Seoul'`을 붙여 KST(UTC+9)로 변환한다.
 
 ---
 
 ## 🐛 버그 수정 이력
+
+### 2026-03-11: 수정 시각 표시 UTC → KST 전환
+
+헤더에 표시되는 파일 수정 시각이 UTC 기준으로 표시되던 문제를 수정했다.
+
+| 항목 | 변경 전 | 변경 후 |
+|------|---------|---------|
+| 시각 표시 | `수정 YYYY-MM-DD HH:MM:SS` (UTC) | `수정 YYYY-MM-DD HH:MM:SS KST` (UTC+9) |
+| 날짜 명령 | `date '+%Y-%m-%d %H:%M:%S'` | `TZ='Asia/Seoul' date '+%Y-%m-%d %H:%M:%S'` |
+
+---
 
 ### 2026-03-11: 차트 줌/패닝/최소최대 표시 복구
 
