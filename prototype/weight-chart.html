@@ -94,7 +94,7 @@
   <header>
     <h1>체중 트래커</h1>
     <div class="header-right">
-      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 15:47:35</span>
+      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 15:49:31</span>
       <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
       <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
     </div>
@@ -102,9 +102,9 @@
 
   <!-- 탭 -->
   <div class="tab-bar">
-    <button class="tab" data-mode="recent40">최근40일</button>
+    <button class="tab active" data-mode="recent40">최근40일</button>
     <button class="tab" data-mode="thisyear">올해</button>
-    <button class="tab active" data-mode="all">전체보기</button>
+    <button class="tab" data-mode="all">전체보기</button>
     <button class="tab" data-mode="weekly">주간평균</button>
     <button class="tab" data-mode="monthly">월간평균</button>
   </div>
@@ -317,7 +317,7 @@ const RAW_DATA = [
    앱 상태
 ──────────────────────────────────── */
 let allData  = [...RAW_DATA].sort((a,b) => a.date.localeCompare(b.date));
-let mode     = 'all';          // 현재 탭
+let mode     = 'recent40';          // 현재 탭
 let showLabels = false;       // 꼭지점 숫자 on/off
 let chart, lineSeries, markerSeries;
 
