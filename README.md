@@ -238,6 +238,14 @@ TradingView(Lightweight Charts)에서 Chart.js로 전환하면서 아래 3가지
 
 ---
 
+### 작업 계획: CLAUDE 지침을 GEMINI.md로 통합
+- **목표**: `CLAUDE.md`에만 있던 프로토타입 수정 규칙을 `GEMINI.md`의 작업 사이클로 명문화하여 지침 누락을 방지함.
+- **수정 내용**: 
+  - `GEMINI.md`의 3번 '코드 수정' 단계에 `prototype/weight-chart.html` 수정 시 KST 시간 갱신 규칙 추가.
+- **예상 결과**: 향후 모든 작업에서 프로토타입 수정 시 자동으로 수정 시간이 갱신됨을 보장함.
+
+---
+
 ## TODO 분석
 
 ### 1. 차트 유용성 재검토
