@@ -339,15 +339,6 @@ Lightweight Charts는 금융 차트용이라 체중 데이터에 불필요한 �
   - `prototype/weight-chart.html`의 Chart.js `scales.x.ticks.callback`을 추가하여 `[월/일, 연도]` 배열을 반환하도록 수정.
 - **예상 결과**: 차트 X축 라벨이 상단에 'MM/dd', 하단에 'yyyy'가 배치된 두 줄 형태로 표시됨.
 
-
-
-
-
-
-
-
-
-
 ---
 
 ### 작업 계획: 깃 푸시 테스트
