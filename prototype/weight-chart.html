@@ -42,17 +42,17 @@
 
   /* ── 레이아웃 ── */
   .app { display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; }
-  header { padding: 16px 20px 8px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: var(--bg); position: sticky; top: 0; z-index: 10; }
+  header { padding: 16px 10px 8px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: var(--bg); position: sticky; top: 0; z-index: 10; }
   header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
   .header-right { display: flex; gap: 8px; align-items: center; }
 
   /* ── 탭 (7일/주간/월간/전체) ── */
-  .tab-bar { display: flex; gap: 4px; padding: 12px 16px 0; background: var(--bg); }
+  .tab-bar { display: flex; gap: 4px; padding: 12px 8px 0; background: var(--bg); }
   .tab { flex: 1; padding: 7px 0; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text2); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; }
   .tab.active { background: var(--accent); border-color: var(--accent); color: #000; }
 
   /* ── 요약 카드 ── */
-  .summary { padding: 14px 16px 0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .summary { padding: 14px 8px 0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
   .stat-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
   .stat-value { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
@@ -63,7 +63,7 @@
   .stat-date { display: block; font-size: 10px; color: var(--text2); font-weight: 400; margin-top: 2px; }
 
   /* ── 목표 체중 패널 ── */
-  .goal-panel { padding: 12px 16px 4px; display: flex; align-items: center; gap: 10px; }
+  .goal-panel { padding: 12px 8px 4px; display: flex; align-items: center; gap: 10px; }
   .goal-label { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; }
   .goal-input-wrap { flex: 1; display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px; }
   .goal-input { width: 100%; background: none; border: none; color: var(--text); font-size: 15px; font-weight: 700; outline: none; padding: 4px 0; }
@@ -76,7 +76,7 @@
   .goal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
   /* ── 차트 영역 ── */
-  .chart-wrap { padding: 12px 16px 0; position: relative; }
+  .chart-wrap { padding: 12px 8px 0; position: relative; }
   .chart-container { width: 100%; height: var(--chart-h); border-radius: var(--radius); overflow: hidden; background: var(--surface); border: 1px solid var(--border); position: relative; touch-action: none; cursor: grab; }
   .chart-container:active { cursor: grabbing; }
   .chart-container canvas { width: 100% !important; height: 100% !important; cursor: inherit; }
@@ -88,7 +88,7 @@
   .toolbar-btn svg { width: 13px; height: 13px; }
 
   /* ── 데이터 리스트 ── */
-  .list-section { padding: 0 16px 20px; }
+  .list-section { padding: 0 8px 20px; }
   .list-header { font-size: 12px; color: var(--text3); padding: 14px 0 8px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
   .list-item { display: flex; align-items: center; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 6px; }
   .list-date { flex: 1; font-size: 13px; color: var(--text2); }
@@ -113,7 +113,7 @@
   <header>
     <h1>체중 트래커</h1>
     <div class="header-right">
-      <span style="font-size:11px;color:var(--text3);">수정 2026-03-12 00:27:10 KST</span>
+      <span style="font-size:11px;color:var(--text3);">수정 2026-03-12 00:33:05 KST</span>
       <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
       <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
     </div>
@@ -518,7 +518,7 @@ function initChart() {
         intersect: false,
       },
       layout: {
-        padding: { top: 20, bottom: 5, left: 5, right: 10 }
+        padding: { top: 20, bottom: 5, left: 5, right: 5 }
       },
       scales: {
         x: {
