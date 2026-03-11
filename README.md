@@ -331,6 +331,15 @@ Lightweight Charts는 금융 차트용이라 체중 데이터에 불필요한 �
   - `prototype/weight-chart.html`의 Chart.js 설정 중 `scales.x.time.displayFormats.day` 값을 `'MM/dd'`에서 `'yy/MM/dd'`로 변경.
 - **예상 결과**: 차트 하단 날짜 표시에서 연도(yy)를 함께 확인할 수 있게 됨.
 
+---
+
+### 작업 계획: 차트 X축 날짜 두 줄 표시 (MM/dd + yyyy)
+- **목적**: 날짜 시인성을 높이기 위해 월/일과 연도를 두 줄로 분리하여 표시함.
+- **수정 내용**: 
+  - `prototype/weight-chart.html`의 Chart.js `scales.x.ticks.callback`을 추가하여 `[월/일, 연도]` 배열을 반환하도록 수정.
+- **예상 결과**: 차트 X축 라벨이 상단에 'MM/dd', 하단에 'yyyy'가 배치된 두 줄 형태로 표시됨.
+
+
 
 
 

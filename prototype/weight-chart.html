@@ -100,7 +100,7 @@
   <header>
     <h1>체중 트래커</h1>
     <div class="header-right">
-      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 23:23:07 KST</span>
+      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 23:29:35 KST</span>
       <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
       <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
     </div>
@@ -415,7 +415,17 @@ function initChart() {
             tooltipFormat: 'yyyy.MM.dd',
           },
           grid: { color: t.grid, drawBorder: false },
-          ticks: { color: t.text, font: { size: 10 }, maxTicksLimit: 8 },
+          ticks: {
+            color: t.text,
+            font: { size: 10 },
+            maxTicksLimit: 8,
+            callback: function(val, index) {
+              const d = new Date(this.getLabelForValue(val));
+              const m = d.getMonth() + 1;
+              const dd = d.getDate();
+              return [ (m < 10 ? '0' + m : m) + '/' + (dd < 10 ? '0' + dd : dd), d.getFullYear() ];
+            }
+          },
           border: { color: t.border },
         },
         y: {
