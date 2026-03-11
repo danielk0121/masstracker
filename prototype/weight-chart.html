@@ -62,6 +62,19 @@
   .stat-unit { font-size: 11px; color: var(--text2); margin-left: 2px; font-weight: 400; }
   .stat-date { display: block; font-size: 10px; color: var(--text2); font-weight: 400; margin-top: 2px; }
 
+  /* ── 목표 체중 패널 ── */
+  .goal-panel { padding: 12px 16px 4px; display: flex; align-items: center; gap: 10px; }
+  .goal-label { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; }
+  .goal-input-wrap { flex: 1; display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px; }
+  .goal-input { width: 100%; background: none; border: none; color: var(--text); font-size: 15px; font-weight: 700; outline: none; padding: 4px 0; }
+  .goal-input:disabled { color: var(--text2); cursor: not-allowed; }
+  .goal-unit { font-size: 12px; color: var(--text3); font-weight: 600; }
+  .goal-btn-group { display: flex; gap: 4px; }
+  .goal-btn { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s; white-space: nowrap; }
+  .goal-btn.primary { background: var(--accent); border-color: var(--accent); color: #000; }
+  .goal-btn:hover:not(:disabled) { background: var(--border); color: var(--text); }
+  .goal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
   /* ── 차트 영역 ── */
   .chart-wrap { padding: 12px 16px 0; position: relative; }
   .chart-container { width: 100%; height: var(--chart-h); border-radius: var(--radius); overflow: hidden; background: var(--surface); border: 1px solid var(--border); position: relative; touch-action: none; cursor: grab; }
@@ -100,7 +113,7 @@
   <header>
     <h1>체중 트래커</h1>
     <div class="header-right">
-      <span style="font-size:11px;color:var(--text3);">수정 2026-03-11 23:34:01 KST</span>
+      <span style="font-size:11px;color:var(--text3);">수정 2026-03-12 00:01:22 KST</span>
       <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
       <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
     </div>
@@ -128,6 +141,19 @@
     <div class="stat">
       <div class="stat-label">최고</div>
       <div class="stat-value up" id="s-max">–</div>
+    </div>
+  </div>
+
+  <!-- 목표 체중 설정 -->
+  <div class="goal-panel">
+    <div class="goal-label">목표 체중</div>
+    <div class="goal-input-wrap">
+      <input type="number" id="goal-input" class="goal-input" step="0.1" placeholder="예: 70.5" disabled>
+      <span class="goal-unit">kg</span>
+    </div>
+    <div class="goal-btn-group">
+      <button id="goal-btn-edit" class="goal-btn" onclick="editGoal()">수정</button>
+      <button id="goal-btn-apply" class="goal-btn primary" onclick="applyGoal()" style="display:none;">적용</button>
     </div>
   </div>
 
@@ -341,6 +367,7 @@ let mode     = 'recent40';
 let showLabels = false;
 let showDots = false;
 let chart = null;
+let goalWeight = null; // 목표 체중
 
 /* ────────────────────────────────────
    날짜 유틸
@@ -352,7 +379,80 @@ const fmtFull = d => {
   const dow = DAYS[new Date(`${y}-${m}-${dd}T00:00:00`).getDay()];
   return `${y}.${m}.${dd} (${dow})`;
 };
-const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
+const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+
+/* ────────────────────────────────────
+   목표 체중 로직
+──────────────────────────────────── */
+function initGoalWeight() {
+  // 로컬 스토리지 확인 (추후 영속성 위해)
+  const saved = localStorage.getItem('goalWeight');
+  if (saved) {
+    goalWeight = parseFloat(saved);
+  } else {
+    // 올해 평균값 계산
+    const thisYear = new Date().getFullYear().toString();
+    const thisYearData = allData.filter(d => d.date.startsWith(thisYear));
+    if (thisYearData.length > 0) {
+      goalWeight = parseFloat(avg(thisYearData.map(d => d.w)).toFixed(1));
+    } else {
+      goalWeight = 70.0; // 데이터 없을 시 기본값
+    }
+  }
+  document.getElementById('goal-input').value = goalWeight;
+}
+
+function editGoal() {
+  const input = document.getElementById('goal-input');
+  const btnEdit = document.getElementById('goal-btn-edit');
+  const btnApply = document.getElementById('goal-btn-apply');
+
+  input.disabled = false;
+  input.focus();
+  btnEdit.style.display = 'none';
+  btnApply.style.display = 'block';
+}
+
+function applyGoal() {
+  const input = document.getElementById('goal-input');
+  const btnEdit = document.getElementById('goal-btn-edit');
+  const btnApply = document.getElementById('goal-btn-apply');
+
+  const val = parseFloat(input.value);
+  if (isNaN(val) || val <= 0) {
+    alert('유효한 체중을 입력해주세요.');
+    return;
+  }
+
+  goalWeight = val;
+  localStorage.setItem('goalWeight', goalWeight); // 저장
+  
+  input.disabled = true;
+  btnEdit.style.display = 'block';
+  btnApply.style.display = 'none';
+  
+  updateGoalLine();
+}
+
+function updateGoalLine() {
+  if (!chart) return;
+  
+  // 목표선 데이터셋 업데이트
+  const dataset = chart.data.datasets[1];
+  if (dataset) {
+    // 현재 차트 데이터의 X축 범위에 맞춰 가로선 생성
+    const chartData = chart.data.datasets[0].data;
+    if (chartData.length > 0) {
+      const firstX = chartData[0].x;
+      const lastX = chartData[chartData.length - 1].x;
+      dataset.data = [
+        { x: firstX, y: goalWeight },
+        { x: lastX, y: goalWeight }
+      ];
+      chart.update('none');
+    }
+  }
+}
 
 /* ────────────────────────────────────
    테마 색상
@@ -380,20 +480,34 @@ function initChart() {
   chart = new Chart(ctx, {
     type: 'line',
     data: {
-      datasets: [{
-        data: [],
-        borderColor: t.line,
-        borderWidth: 2,
-        backgroundColor: 'rgba(0,229,160,0.08)',
-        fill: true,
-        tension: 0.3,
-        pointRadius: 1.5,
-        pointHitRadius: 10,
-        pointHoverRadius: 2.5,
-        pointHoverBackgroundColor: t.line,
-        pointHoverBorderColor: t.line,
-        pointHoverBorderWidth: 2,
-      }]
+      datasets: [
+        {
+          label: '체중',
+          data: [],
+          borderColor: t.line,
+          borderWidth: 2,
+          backgroundColor: 'rgba(0,229,160,0.08)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 1.5,
+          pointHitRadius: 10,
+          pointHoverRadius: 2.5,
+          pointHoverBackgroundColor: t.line,
+          pointHoverBorderColor: t.line,
+          pointHoverBorderWidth: 2,
+        },
+        {
+          label: '목표 체중',
+          data: [],
+          borderColor: '#ff4d6d',
+          borderWidth: 1.5,
+          borderDash: [5, 5],
+          pointRadius: 0,
+          fill: false,
+          tooltip: { enabled: false },
+          datalabels: { display: false }
+        }
+      ]
     },
     options: {
       responsive: true,
@@ -726,6 +840,7 @@ function updateChart() {
   const pts = initVisible.length ? initVisible : allPts;
   autoScaleY(pts);
   updateStats(pts);
+  updateGoalLine();
   renderList(pts);
 }
 
@@ -863,6 +978,7 @@ function toggleTheme() {
 /* ────────────────────────────────────
    초기화
 ──────────────────────────────────── */
+initGoalWeight();
 initChart();
 updateChart();
 updateBadge();
