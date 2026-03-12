@@ -80,8 +80,8 @@
   .goal-left { display: flex; align-items: center; gap: 12px; flex: 1; }
   .goal-label { font-size: 12px; font-weight: 700; color: var(--text2); }
   .goal-value-wrap { display: flex; align-items: baseline; gap: 4px; margin-left: auto; margin-right: 12px; }
-  .goal-input-inline { width: 60px; background: none; border: none; color: #ffcc80; font-size: 17px; font-weight: 800; outline: none; padding: 0; line-height: 1; text-align: right; }
-  .goal-input-inline:disabled { color: #ffcc80; cursor: default; }
+  .goal-input-inline { width: 60px; background: none; border: none; color: var(--text); font-size: 17px; font-weight: 800; outline: none; padding: 0; line-height: 1; text-align: right; }
+  .goal-input-inline:disabled { color: var(--text); cursor: default; }
   .btn-apply-goal { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 12px; font-weight: 700; cursor: pointer; padding: 4px 12px; }
   .btn-apply-goal:hover { background: var(--border); }
 
@@ -129,7 +129,7 @@
     </div>
     <div class="header-info">
       <div class="dev-name">danielk0121</div>
-      <div class="update-info">v-260312-1803-kst</div>
+      <div class="update-info">v-260312-1805-kst</div>
     </div>
 
 
@@ -182,7 +182,7 @@
         <div class="goal-label">목표 체중</div>
         <div class="goal-value-wrap">
           <input type="number" id="goal-input" class="goal-input-inline" step="0.1" disabled>
-          &nbsp;<span class="stat-unit" style="font-size: 14px; font-weight: 700; color: #ffcc80;">kg</span>
+          &nbsp;<span class="stat-unit" style="font-size: 14px; font-weight: 700; color: var(--text);">kg</span>
         </div>
       </div>
       <button id="btn-goal-action" class="btn-apply-goal" onclick="editGoal()">변경</button>
