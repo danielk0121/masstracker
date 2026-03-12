@@ -47,39 +47,35 @@
   /* ── 레이아웃 ── */
   .app { display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; }
   header { padding: 16px 10px 8px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: var(--bg); position: sticky; top: 0; z-index: 10; }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .btn-settings { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text2); padding: 0; display: flex; align-items: center; }
   .header-title { display: flex; flex-direction: column; gap: 2px; }
   header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
   .header-subtitle { font-size: 11px; color: var(--text2); font-weight: 400; letter-spacing: 0.1px; padding: 10px 10px 0; }
-  .header-right { display: flex; gap: 8px; align-items: center; }
+  .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .update-info { font-size: 10px; color: var(--text3); }
 
   /* ── 탭 (7일/주간/월간/전체) ── */
   .tab-bar { display: flex; gap: 4px; padding: 12px 8px 0; background: var(--bg); }
   .tab { flex: 1; padding: 7px 0; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text2); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; }
   .tab.active { background: var(--accent); border-color: var(--accent); color: #000; }
 
-  /* ── 요약 카드 ── */
-  .summary { padding: 14px 8px 0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
-  .stat-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
-  .stat-value { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+  /* ── 대시보드 (목표/평균/최저/최고) ── */
+  .dashboard { padding: 14px 8px 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 8px; display: flex; flex-direction: column; justify-content: center; }
+  .stat-label { font-size: 10px; color: var(--text2); margin-bottom: 2px; }
+  .stat-value { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; white-space: nowrap; }
   .stat-value.up   { color: var(--danger); }
   .stat-value.down { color: var(--accent); }
   .stat-value.avg  { color: var(--text); }
-  .stat-unit { font-size: 11px; color: var(--text2); margin-left: 2px; font-weight: 400; }
-  .stat-date { display: block; font-size: 10px; color: var(--text2); font-weight: 400; margin-top: 2px; }
+  .stat-unit { font-size: 10px; color: var(--text2); margin-left: 1px; font-weight: 400; }
+  .stat-date { display: block; font-size: 9px; color: var(--text3); font-weight: 400; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; }
 
-  /* ── 목표 체중 패널 ── */
-  .goal-panel { padding: 12px 8px 0; display: flex; align-items: center; gap: 10px; }
-  .goal-label { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; }
-  .goal-input-wrap { flex: 1; display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px; }
-  .goal-input { width: 100%; background: none; border: none; color: var(--text); font-size: 15px; font-weight: 700; outline: none; padding: 4px 0; }
-  .goal-input:disabled { color: var(--text2); cursor: not-allowed; }
-  .goal-unit { font-size: 12px; color: var(--text3); font-weight: 600; }
-  .goal-btn-group { display: flex; gap: 4px; }
-  .goal-btn { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s; white-space: nowrap; }
-  .goal-btn.primary { background: var(--accent); border-color: var(--accent); color: #000; }
-  .goal-btn:hover:not(:disabled) { background: var(--border); color: var(--text); }
-  .goal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  /* ── 목표 체중 입력 (팝업 또는 인라인 모달 형태 권장되나 일단 기존 기능 유지하며 크기 조정) ── */
+  .goal-stat { cursor: pointer; position: relative; }
+  .goal-stat:hover { border-color: var(--accent); }
+  .goal-input-inline { width: 100%; background: none; border: none; color: var(--accent); font-size: 15px; font-weight: 800; outline: none; padding: 0; }
+  .goal-input-inline:disabled { color: var(--accent); cursor: pointer; }
 
   /* ── 차트 영역 ── */
   .chart-wrap { padding: 4px 8px 0; position: relative; }
@@ -118,13 +114,18 @@
 
   <!-- 헤더 -->
   <header>
-    <div class="header-title">
-      <h1>체중 트래커</h1>
+    <div class="header-left">
+      <a href="settings.html" class="btn-settings" title="설정">⚙️</a>
+      <div class="header-title">
+        <h1>체중 트래커 <small style="font-size:12px; font-weight:400; color:var(--text3); margin-left:4px;">by danielk0121</small></h1>
+      </div>
     </div>
     <div class="header-right">
-      <span style="font-size:11px;color:var(--text3);">업데이트 2026-03-12 02:24:55 KST</span>
-      <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
-      <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
+      <div class="update-info">ver.20260312-160108-kst</div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
+        <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
+      </div>
     </div>
   </header>
 
@@ -134,38 +135,35 @@
   <!-- 탭 -->
   <div class="tab-bar">
     <button class="tab active" data-mode="recent40">최근40일</button>
-    <button class="tab" data-mode="thisyear">올해</button>
-    <button class="tab" data-mode="all">전체보기</button>
+    <button class="tab" data-mode="thisyear">이번연</button>
+    <button class="tab" data-mode="all">일자별</button>
     <button class="tab" data-mode="weekly">주간평균</button>
     <button class="tab" data-mode="monthly">월간평균</button>
   </div>
 
-  <!-- 요약 -->
-  <div class="summary">
+  <!-- 대시보드 -->
+  <div class="dashboard">
+    <!-- 목표 -->
+    <div class="stat goal-stat" onclick="editGoal()">
+      <div class="stat-label">목표</div>
+      <div class="stat-value down">
+        <input type="number" id="goal-input" class="goal-input-inline" step="0.1" disabled>
+      </div>
+    </div>
+    <!-- 평균 -->
     <div class="stat">
       <div class="stat-label">평균</div>
       <div class="stat-value avg" id="s-avg">–</div>
     </div>
+    <!-- 최저 -->
     <div class="stat">
       <div class="stat-label">최저</div>
       <div class="stat-value down" id="s-min">–</div>
     </div>
+    <!-- 최고 -->
     <div class="stat">
       <div class="stat-label">최고</div>
       <div class="stat-value up" id="s-max">–</div>
-    </div>
-  </div>
-
-  <!-- 목표 체중 설정 -->
-  <div class="goal-panel">
-    <div class="goal-label">목표 체중</div>
-    <div class="goal-input-wrap">
-      <input type="number" id="goal-input" class="goal-input" step="0.1" placeholder="예: 70.5" disabled>
-      <span class="goal-unit">kg</span>
-    </div>
-    <div class="goal-btn-group">
-      <button id="goal-btn-edit" class="goal-btn" onclick="editGoal()">수정</button>
-      <button id="goal-btn-apply" class="goal-btn primary" onclick="applyGoal()" style="display:none;">적용</button>
     </div>
   </div>
 
@@ -416,23 +414,25 @@ function initGoalWeight() {
 
 function editGoal() {
   const input = document.getElementById('goal-input');
-  const btnEdit = document.getElementById('goal-btn-edit');
-  const btnApply = document.getElementById('goal-btn-apply');
-
   input.disabled = false;
   input.focus();
-  btnEdit.style.display = 'none';
-  btnApply.style.display = 'block';
+  
+  // 엔터 키 누르면 적용
+  input.onkeydown = function(e) {
+    if (e.key === 'Enter') applyGoal();
+  };
+  // 포커스 잃으면 적용
+  input.onblur = function() {
+    applyGoal();
+  };
 }
 
 function applyGoal() {
   const input = document.getElementById('goal-input');
-  const btnEdit = document.getElementById('goal-btn-edit');
-  const btnApply = document.getElementById('goal-btn-apply');
-
   const val = parseFloat(input.value);
   if (isNaN(val) || val <= 0) {
-    alert('유효한 체중을 입력해주세요.');
+    input.value = goalWeight; // 원상복구
+    input.disabled = true;
     return;
   }
 
@@ -440,9 +440,6 @@ function applyGoal() {
   localStorage.setItem('goalWeight', goalWeight); // 저장
   
   input.disabled = true;
-  btnEdit.style.display = 'block';
-  btnApply.style.display = 'none';
-  
   updateGoalLine();
 }
 
@@ -559,7 +556,7 @@ function initChart() {
           ticks: {
             color: t.text,
             font: { size: 10 },
-            callback: v => v.toFixed(0) + 'kg',
+            callback: v => v.toFixed(1) + 'kg',
           },
           border: { color: t.border },
         }
