@@ -67,20 +67,20 @@
   .dashboard { padding: 14px 8px 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-items: stretch; }
   .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 10px; display: flex; flex-direction: column; min-height: 100px; justify-content: flex-start; }
   .stat-label { font-size: 11px; color: var(--text2); margin-bottom: 8px; height: 14px; display: flex; align-items: center; font-weight: 600; }
-  .stat-value { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; white-space: nowrap; display: flex; align-items: baseline; line-height: 1.2; }
+  .stat-value { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; white-space: nowrap; display: flex; flex-direction: column; align-items: flex-start; line-height: 1.2; }
   .stat-value.up   { color: var(--danger); }
   .stat-value.down { color: var(--accent); }
   .stat-value.avg  { color: var(--text); }
   .stat-unit { font-size: 12px; color: var(--text2); margin-left: 4px; font-weight: 400; }
-  .stat-date { display: block; font-size: 10px; color: var(--text3); font-weight: 400; margin-top: auto; line-height: 1.4; white-space: nowrap; }
+  .stat-date { display: block; font-size: 10px; color: var(--text3); font-weight: 400; margin-top: 4px; line-height: 1.4; white-space: nowrap; text-align: left; width: 100%; }
 
   /* ── 목표 체중 패널 (하단 별도 배치) ── */
   .goal-panel { padding: 12px 8px 0; }
   .goal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 6px 14px; display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
-  .goal-left { display: flex; align-items: center; gap: 12px; }
+  .goal-left { display: flex; align-items: center; gap: 12px; flex: 1; }
   .goal-label { font-size: 12px; font-weight: 700; color: var(--text2); }
-  .goal-value-wrap { display: flex; align-items: baseline; gap: 4px; }
-  .goal-input-inline { width: 60px; background: none; border: none; color: var(--accent); font-size: 24px; font-weight: 800; outline: none; padding: 0; line-height: 1; }
+  .goal-value-wrap { display: flex; align-items: baseline; gap: 4px; margin-left: auto; margin-right: 12px; }
+  .goal-input-inline { width: 60px; background: none; border: none; color: var(--accent); font-size: 24px; font-weight: 800; outline: none; padding: 0; line-height: 1; text-align: right; }
   .goal-input-inline:disabled { color: var(--accent); cursor: default; }
   .btn-apply-goal { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 12px; font-weight: 700; cursor: pointer; padding: 4px 12px; }
   .btn-apply-goal:hover { background: var(--border); }
@@ -129,7 +129,7 @@
     </div>
     <div class="header-info">
       <div class="dev-name">danielk0121</div>
-      <div class="update-info">ver-20260312-170106-kst</div>
+      <div class="update-info">ver-20260312-170427-kst</div>
     </div>
     <div class="header-right">
       <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
@@ -819,9 +819,9 @@ function updateStats(pts) {
     const dow = DAYS[new Date(`${y}-${m}-${dd}T00:00:00`).getDay()];
     return `${y}.${m}.${dd} (${dow})`;
   };
-  document.getElementById('s-avg').innerHTML = avg(vals).toFixed(1)+' <span class="stat-unit">kg</span>';
-  document.getElementById('s-min').innerHTML = minVal.toFixed(1)+' <span class="stat-unit">kg</span><span class="stat-date"><br>'+fmtStat(minPt.x)+'</span>';
-  document.getElementById('s-max').innerHTML = maxVal.toFixed(1)+' <span class="stat-unit">kg</span><span class="stat-date"><br>'+fmtStat(maxPt.x)+'</span>';
+  document.getElementById('s-avg').innerHTML = `<div>${avg(vals).toFixed(1)} <span class="stat-unit">kg</span></div>`;
+  document.getElementById('s-min').innerHTML = `<div>${minVal.toFixed(1)} <span class="stat-unit">kg</span></div><span class="stat-date">${fmtStat(minPt.x)}</span>`;
+  document.getElementById('s-max').innerHTML = `<div>${maxVal.toFixed(1)} <span class="stat-unit">kg</span></div><span class="stat-date">${fmtStat(maxPt.x)}</span>`;
 }
 
 /* ────────────────────────────────────
