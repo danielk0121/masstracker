@@ -115,13 +115,16 @@
   <!-- 헤더 -->
   <header>
     <div class="header-left">
-      <a href="settings.html" class="btn-settings" title="설정">⚙️</a>
+      <a href="settings.html" class="btn-settings" title="설정">☰</a>
       <div class="header-title">
-        <h1>체중 트래커 <small style="font-size:12px; font-weight:400; color:var(--text3); margin-left:4px;">by danielk0121</small></h1>
+        <h1>체중 트래커</h1>
       </div>
     </div>
     <div class="header-right">
-      <div class="update-info">ver.20260312-160108-kst</div>
+      <div style="text-align: left; margin-right: auto; padding-right: 20px;">
+        <div style="font-size: 10px; color: var(--text3); line-height: 1.2;">danielk0121</div>
+        <div class="update-info" style="line-height: 1.2;">ver-20260312-162355-kst</div>
+      </div>
       <div style="display:flex; align-items:center; gap:8px;">
         <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
         <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
@@ -144,11 +147,13 @@
   <!-- 대시보드 -->
   <div class="dashboard">
     <!-- 목표 -->
-    <div class="stat goal-stat" onclick="editGoal()">
+    <div class="stat goal-stat">
       <div class="stat-label">목표</div>
-      <div class="stat-value down">
-        <input type="number" id="goal-input" class="goal-input-inline" step="0.1" disabled>
+      <div class="stat-value down" style="display: flex; align-items: baseline;">
+        <input type="number" id="goal-input" class="goal-input-inline" step="0.1" style="width: 45px;" disabled>
+        <span class="stat-unit">kg</span>
       </div>
+      <button onclick="editGoal()" style="background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--text3); font-size: 9px; margin-top: 4px; cursor: pointer; padding: 2px 4px;">수정</button>
     </div>
     <!-- 평균 -->
     <div class="stat">
