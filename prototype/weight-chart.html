@@ -46,14 +46,16 @@
 
   /* ── 레이아웃 ── */
   .app { display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; }
-  header { padding: 16px 10px 8px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: var(--bg); position: sticky; top: 0; z-index: 10; }
-  .header-left { display: flex; align-items: center; gap: 10px; }
-  .btn-settings { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text2); padding: 0; display: flex; align-items: center; }
-  .header-title { display: flex; flex-direction: column; gap: 2px; }
-  header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  header { padding: 16px 10px 8px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: var(--bg); position: sticky; top: 0; z-index: 10; gap: 10px; }
+  header { padding: 12px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: var(--bg); position: sticky; top: 0; z-index: 10; gap: 8px; }
+  .header-left { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .btn-settings { background: none; border: none; cursor: pointer; font-size: 18px; color: var(--text2); padding: 0; display: flex; align-items: center; }
+  .header-title h1 { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; white-space: nowrap; }
+  .header-info { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-width: 0; margin-left: 4px; }
+  .dev-name { font-size: 9px; color: var(--text3); line-height: 1; }
+  .update-info { font-size: 9px; color: var(--text3); line-height: 1; }
+  .header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
   .header-subtitle { font-size: 11px; color: var(--text2); font-weight: 400; letter-spacing: 0.1px; padding: 10px 10px 0; }
-  .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-  .update-info { font-size: 10px; color: var(--text3); }
 
   /* ── 탭 (7일/주간/월간/전체) ── */
   .tab-bar { display: flex; gap: 4px; padding: 12px 8px 0; background: var(--bg); }
@@ -62,20 +64,20 @@
 
   /* ── 대시보드 (목표/평균/최저/최고) ── */
   .dashboard { padding: 14px 8px 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 8px; display: flex; flex-direction: column; justify-content: center; }
-  .stat-label { font-size: 10px; color: var(--text2); margin-bottom: 2px; }
-  .stat-value { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; white-space: nowrap; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 6px; display: flex; flex-direction: column; min-height: 70px; }
+  .stat-label { font-size: 10px; color: var(--text2); margin-bottom: 8px; height: 12px; display: flex; align-items: center; }
+  .stat-value { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; white-space: nowrap; display: flex; align-items: baseline; }
   .stat-value.up   { color: var(--danger); }
   .stat-value.down { color: var(--accent); }
   .stat-value.avg  { color: var(--text); }
-  .stat-unit { font-size: 10px; color: var(--text2); margin-left: 1px; font-weight: 400; }
-  .stat-date { display: block; font-size: 9px; color: var(--text3); font-weight: 400; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; }
+  .stat-unit { font-size: 11px; color: var(--text2); margin-left: 4px; font-weight: 400; }
+  .stat-date { display: block; font-size: 9px; color: var(--text3); font-weight: 400; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  /* ── 목표 체중 입력 (팝업 또는 인라인 모달 형태 권장되나 일단 기존 기능 유지하며 크기 조정) ── */
-  .goal-stat { cursor: pointer; position: relative; }
-  .goal-stat:hover { border-color: var(--accent); }
-  .goal-input-inline { width: 100%; background: none; border: none; color: var(--accent); font-size: 15px; font-weight: 800; outline: none; padding: 0; }
-  .goal-input-inline:disabled { color: var(--accent); cursor: pointer; }
+  /* ── 목표 체중 입력 ── */
+  .goal-input-inline { width: 48px; background: none; border: none; color: var(--accent); font-size: 22px; font-weight: 800; outline: none; padding: 0; }
+  .goal-input-inline:disabled { color: var(--accent); cursor: default; }
+  .btn-apply-goal { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; color: var(--text2); font-size: 9px; font-weight: 600; cursor: pointer; padding: 2px 4px; margin-left: 2px; }
+  .btn-apply-goal:hover { background: var(--border); color: var(--text); }
 
   /* ── 차트 영역 ── */
   .chart-wrap { padding: 4px 8px 0; position: relative; }
@@ -120,15 +122,13 @@
         <h1>체중 트래커</h1>
       </div>
     </div>
+    <div class="header-info">
+      <div class="dev-name">danielk0121</div>
+      <div class="update-info">ver-20260312-163621-kst</div>
+    </div>
     <div class="header-right">
-      <div style="text-align: left; margin-right: auto; padding-right: 20px;">
-        <div style="font-size: 10px; color: var(--text3); line-height: 1.2;">danielk0121</div>
-        <div class="update-info" style="line-height: 1.2;">ver-20260312-162355-kst</div>
-      </div>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
-        <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
-      </div>
+      <button id="btn-theme" onclick="toggleTheme()" title="테마 전환">🌙</button>
+      <span id="today-badge" style="font-size:12px;color:var(--text2);"></span>
     </div>
   </header>
 
@@ -138,7 +138,7 @@
   <!-- 탭 -->
   <div class="tab-bar">
     <button class="tab active" data-mode="recent40">최근40일</button>
-    <button class="tab" data-mode="thisyear">이번연</button>
+    <button class="tab" data-mode="thisyear">이번연도</button>
     <button class="tab" data-mode="all">일자별</button>
     <button class="tab" data-mode="weekly">주간평균</button>
     <button class="tab" data-mode="monthly">월간평균</button>
@@ -149,11 +149,11 @@
     <!-- 목표 -->
     <div class="stat goal-stat">
       <div class="stat-label">목표</div>
-      <div class="stat-value down" style="display: flex; align-items: baseline;">
-        <input type="number" id="goal-input" class="goal-input-inline" step="0.1" style="width: 45px;" disabled>
+      <div class="stat-value down">
+        <input type="number" id="goal-input" class="goal-input-inline" step="0.1" disabled>
         <span class="stat-unit">kg</span>
+        <button id="btn-goal-action" class="btn-apply-goal" onclick="editGoal()">적용</button>
       </div>
-      <button onclick="editGoal()" style="background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--text3); font-size: 9px; margin-top: 4px; cursor: pointer; padding: 2px 4px;">수정</button>
     </div>
     <!-- 평균 -->
     <div class="stat">
@@ -419,17 +419,16 @@ function initGoalWeight() {
 
 function editGoal() {
   const input = document.getElementById('goal-input');
-  input.disabled = false;
-  input.focus();
-  
-  // 엔터 키 누르면 적용
-  input.onkeydown = function(e) {
-    if (e.key === 'Enter') applyGoal();
-  };
-  // 포커스 잃으면 적용
-  input.onblur = function() {
+  if (input.disabled) {
+    input.disabled = false;
+    input.focus();
+    // 엔터 키 누르면 적용
+    input.onkeydown = function(e) {
+      if (e.key === 'Enter') applyGoal();
+    };
+  } else {
     applyGoal();
-  };
+  }
 }
 
 function applyGoal() {
@@ -437,15 +436,12 @@ function applyGoal() {
   const val = parseFloat(input.value);
   if (isNaN(val) || val <= 0) {
     input.value = goalWeight; // 원상복구
-    input.disabled = true;
-    return;
+  } else {
+    goalWeight = val;
+    localStorage.setItem('goalWeight', goalWeight); // 저장
+    updateGoalLine();
   }
-
-  goalWeight = val;
-  localStorage.setItem('goalWeight', goalWeight); // 저장
-  
   input.disabled = true;
-  updateGoalLine();
 }
 
 function updateGoalLine() {
@@ -808,9 +804,9 @@ function updateStats(pts) {
     const dow = DAYS[new Date(`${y}-${m}-${dd}T00:00:00`).getDay()];
     return `${y}.${m}.${dd} (${dow})`;
   };
-  document.getElementById('s-avg').innerHTML = avg(vals).toFixed(1)+'<span class="stat-unit">kg</span>';
-  document.getElementById('s-min').innerHTML = minVal.toFixed(1)+'<span class="stat-unit">kg</span><span class="stat-date">'+fmtStat(minPt.x)+'</span>';
-  document.getElementById('s-max').innerHTML = maxVal.toFixed(1)+'<span class="stat-unit">kg</span><span class="stat-date">'+fmtStat(maxPt.x)+'</span>';
+  document.getElementById('s-avg').innerHTML = avg(vals).toFixed(1)+' <span class="stat-unit">kg</span>';
+  document.getElementById('s-min').innerHTML = minVal.toFixed(1)+' <span class="stat-unit">kg</span><span class="stat-date">'+fmtStat(minPt.x)+'</span>';
+  document.getElementById('s-max').innerHTML = maxVal.toFixed(1)+' <span class="stat-unit">kg</span><span class="stat-date">'+fmtStat(maxPt.x)+'</span>';
 }
 
 /* ────────────────────────────────────
